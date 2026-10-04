@@ -35,6 +35,7 @@ import com.streamvault.domain.model.StalkerConfig
 import com.streamvault.domain.model.StreamInfo
 import com.streamvault.domain.model.StreamType
 import com.streamvault.domain.repository.ChannelRepository
+import com.streamvault.domain.util.ChannelClassification
 import com.streamvault.domain.util.ChannelNormalizer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -331,8 +332,12 @@ class ChannelRepositoryImpl @Inject constructor(
         val providerNames = entities.map { it.providerId }.distinct()
             .associateWith { providerId -> channelDao.getProviderName(providerId) }
         val fallbackOnly = preferencesRepository.fallbackOnlyProviderIds.first()
+        val baseLanguage = entities.firstOrNull { it.id == channel.selectedVariantId || it.id == channel.id }
+            ?.let { ChannelNormalizer.classify(it.name, it.providerId, it.streamUrl).attributes.languageHint }
         return entities
             .map { it.toVariant(settings.observedQualities[it.id]).copy(sourceName = providerNames[it.providerId]) }
+            // An English feed of the same channel is a different channel for the viewer.
+            .filter { ChannelNormalizer.sameLanguage(baseLanguage, it.attributes.languageHint) }
             .sortedWith(
                 compareBy<LiveChannelVariant> {
                     variantSourceRank(it.providerId, channel.providerId, fallbackOnly)
@@ -564,14 +569,18 @@ class ChannelRepositoryImpl @Inject constructor(
         settings: ChannelPresentationSettings,
         stalkerPortalUrlForProvider: (Long) -> String?
     ): List<Channel> {
-        val grouped = linkedMapOf<String, MutableList<ChannelBrowseEntity>>()
-        entities.forEach { entity ->
-            val key = channelGroupKey(entity)
-            grouped.getOrPut(key) { mutableListOf() }.add(entity)
+        // Classify once per channel: the group key needs the language tag, and so does the
+        // variant built right after. "EN| Eurosport 1" is not a variant of the Italian feed.
+        val classified = entities.map { entity -> entity to ChannelNormalizer.classify(entity.name, entity.providerId, entity.streamUrl) }
+        val grouped = linkedMapOf<String, MutableList<Pair<ChannelBrowseEntity, ChannelClassification>>>()
+        classified.forEach { (entity, classification) ->
+            val key = channelGroupKey(entity) + (classification.attributes.languageHint?.let { "@$it" } ?: "")
+            grouped.getOrPut(key) { mutableListOf() }.add(entity to classification)
         }
-        return grouped.values.map { groupEntities ->
-            val variants = groupEntities.map { entity ->
-                entity.toVariant(settings.observedQualities[entity.id])
+        return grouped.values.map { group ->
+            val groupEntities = group.map { it.first }
+            val variants = group.map { (entity, classification) ->
+                entity.toVariant(settings.observedQualities[entity.id], classification)
             }
             val canonicalName = variants.firstNotNullOfOrNull { variant ->
                 variant.canonicalName.takeIf(String::isNotBlank)
@@ -871,9 +880,10 @@ class ChannelRepositoryImpl @Inject constructor(
         entity.logicalGroupId.takeIf(String::isNotBlank) ?: entity.id.toString()
 
     private fun ChannelBrowseEntity.toVariant(
-        observedQuality: LiveChannelObservedQuality?
+        observedQuality: LiveChannelObservedQuality?,
+        precomputed: ChannelClassification? = null
     ): LiveChannelVariant {
-        val classification = ChannelNormalizer.classify(
+        val classification = precomputed ?: ChannelNormalizer.classify(
             channelName = name,
             providerId = providerId,
             streamUrl = streamUrl

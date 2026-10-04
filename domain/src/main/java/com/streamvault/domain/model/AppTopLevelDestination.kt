@@ -17,16 +17,16 @@ enum class AppTopLevelDestination(
     SETTINGS("settings", AppLandingDestination.SETTINGS, isRequired = true);
 
     companion object {
+        // Home, Favourites and Plugins are off the bar by default: a dashboard of shelves in
+        // front of a TV that opens on live, a favourites row already inside Live TV, and a
+        // plugin manager nobody opens twice. They stay available in Settings > Navigation.
         val defaultOrder: List<AppTopLevelDestination> = listOf(
-            HOME,
             LIVE_TV,
             MOVIES,
             SERIES,
-            FAVORITES,
             DOWNLOADS,
             GUIDE,
             SEARCH,
-            PLUGINS,
             SETTINGS
         )
 

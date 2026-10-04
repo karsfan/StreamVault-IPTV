@@ -256,6 +256,14 @@ object ChannelNormalizer {
         }
     }
 
+    /**
+     * Two feeds are the same channel only when nothing says they are in different languages.
+     * An untagged name stays compatible with everything: most Italian lists tag nothing, and a
+     * reserve playlist that writes "Rai 1" must still back "IT| Rai 1".
+     */
+    fun sameLanguage(first: String?, second: String?): Boolean =
+        first == null || second == null || first.equals(second, ignoreCase = true)
+
     private fun resolveLanguageHint(lowerName: String, extractedTags: List<String>): String? {
         val extractedMatch = extractedTags.firstNotNullOfOrNull { tag ->
             languageTags[tag.trim().lowercase(Locale.ROOT)]

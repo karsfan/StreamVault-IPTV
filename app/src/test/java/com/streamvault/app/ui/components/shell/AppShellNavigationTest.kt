@@ -17,15 +17,12 @@ class AppShellNavigationTest {
 
         assertThat(result.map { it.route })
             .containsExactly(
-                Routes.HOME,
                 Routes.LIVE_TV,
                 Routes.MOVIES,
                 Routes.SERIES,
-                Routes.FAVORITES,
                 Routes.DOWNLOADS,
                 Routes.EPG,
                 Routes.SEARCH,
-                Routes.PLUGINS,
                 Routes.SETTINGS
             )
             .inOrder()

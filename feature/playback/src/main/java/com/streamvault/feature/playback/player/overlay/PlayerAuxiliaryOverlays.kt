@@ -335,8 +335,14 @@ fun ChannelListOverlay(
 
                             TvClickableSurface(
                                 onClick = {
-                                    onOverlayInteracted()
-                                    onSelectChannel(channel.id)
+                                    // OK on another channel zaps and keeps the list up; OK again on
+                                    // the one already playing closes it.
+                                    if (channel.id == currentChannelId) {
+                                        onDismiss()
+                                    } else {
+                                        onOverlayInteracted()
+                                        onSelectChannel(channel.id)
+                                    }
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()

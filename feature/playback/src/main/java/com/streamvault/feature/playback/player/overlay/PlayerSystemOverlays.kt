@@ -444,7 +444,12 @@ fun ChannelVariantSelectionDialog(
                     ?.rawChannelId
                     ?: channel.variants.firstOrNull()?.rawChannelId
 
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Without a ceiling the list grows past the screen inside the dialog column and
+                // the rows below the fold cannot be reached with the D-pad.
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 360.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     itemsIndexed(variants, key = { _, variant -> variant.rawChannelId }) { index, variant ->
                         TrackSelectionItem(
                             name = buildVariantSelectionLabel(variant),
