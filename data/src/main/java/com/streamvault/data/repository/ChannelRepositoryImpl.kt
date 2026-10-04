@@ -50,6 +50,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.take
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -468,7 +469,10 @@ class ChannelRepositoryImpl @Inject constructor(
                 arrayOf(numberingMode, groupingMode, labelMode, preferenceMode)
             },
             preferencesRepository.liveVariantSelections,
-            preferencesRepository.liveVariantObservations
+            // Observations are written every time a channel starts. Followed live, each zap rebuilt
+            // every open list from scratch, the whole playlist on "All channels". Read once per
+            // subscription: combine keeps the last value of a completed flow.
+            preferencesRepository.liveVariantObservations.take(1)
         ) { settingsArray, preferredVariants, observedQualities ->
             ChannelPresentationSettings(
                 numberingMode = settingsArray[0] as ChannelNumberingMode,
