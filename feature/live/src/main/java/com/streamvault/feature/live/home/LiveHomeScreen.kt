@@ -398,6 +398,12 @@ fun LiveHomeScreen(
                 var focusRestoreNonce by rememberSaveable { mutableStateOf(0) }
                 var focusedRemoteShortcutTarget by remember { mutableStateOf<FocusedRemoteShortcutTarget?>(null) }
 
+                // Coming back from the player, the saved channel can sit past the loaded page of a
+                // long playlist: without this the restore found no row and landed on the first one.
+                LaunchedEffect(lastFocusedChannelId, uiState.filteredChannels) {
+                    lastFocusedChannelId?.let(viewModel::ensureChannelLoaded)
+                }
+
                 fun requestChannelFocus(channelId: Long?): Boolean {
                     val resolvedChannelId = channelId ?: return false
                     return channelFocusRequesters[resolvedChannelId]

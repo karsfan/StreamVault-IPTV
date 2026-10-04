@@ -315,7 +315,7 @@ class ChannelRepositoryImpl @Inject constructor(
 
     override suspend fun getEquivalentVariants(channel: Channel): List<LiveChannelVariant> {
         val logicalGroupId = channel.logicalGroupId.ifBlank {
-            ChannelNormalizer.classify(channel.name, channel.providerId, channel.streamUrl).logicalGroupId
+            ChannelNormalizer.classify(channel.name, channel.providerId, channel.streamUrl, channel.groupTitle).logicalGroupId
         }
         val logicalKey = logicalGroupId.removePrefix("${channel.providerId}_")
         if (logicalKey.isBlank() || logicalKey == logicalGroupId) return emptyList()
@@ -333,7 +333,7 @@ class ChannelRepositoryImpl @Inject constructor(
             .associateWith { providerId -> channelDao.getProviderName(providerId) }
         val fallbackOnly = preferencesRepository.fallbackOnlyProviderIds.first()
         val baseLanguage = entities.firstOrNull { it.id == channel.selectedVariantId || it.id == channel.id }
-            ?.let { ChannelNormalizer.classify(it.name, it.providerId, it.streamUrl).attributes.languageHint }
+            ?.let { ChannelNormalizer.classify(it.name, it.providerId, it.streamUrl, it.groupTitle).attributes.languageHint }
         return entities
             .map { it.toVariant(settings.observedQualities[it.id]).copy(sourceName = providerNames[it.providerId]) }
             // An English feed of the same channel is a different channel for the viewer.
@@ -571,7 +571,14 @@ class ChannelRepositoryImpl @Inject constructor(
     ): List<Channel> {
         // Classify once per channel: the group key needs the language tag, and so does the
         // variant built right after. "EN| Eurosport 1" is not a variant of the Italian feed.
-        val classified = entities.map { entity -> entity to ChannelNormalizer.classify(entity.name, entity.providerId, entity.streamUrl) }
+        val classified = entities.map { entity ->
+            entity to ChannelNormalizer.classify(
+                entity.name,
+                entity.providerId,
+                entity.streamUrl,
+                entity.groupTitle
+            )
+        }
         val grouped = linkedMapOf<String, MutableList<Pair<ChannelBrowseEntity, ChannelClassification>>>()
         classified.forEach { (entity, classification) ->
             val key = channelGroupKey(entity) + (classification.attributes.languageHint?.let { "@$it" } ?: "")
@@ -886,7 +893,8 @@ class ChannelRepositoryImpl @Inject constructor(
         val classification = precomputed ?: ChannelNormalizer.classify(
             channelName = name,
             providerId = providerId,
-            streamUrl = streamUrl
+            streamUrl = streamUrl,
+            groupTitle = groupTitle
         )
         return LiveChannelVariant(
             rawChannelId = id,

@@ -172,6 +172,8 @@ internal fun PlayerViewModel.cleanupAfterCleared(mainPlayerEngine: PlayerEngine)
     playerNoticeHideJob?.cancel()
     epgCoordinator.cancel()
     playlistJob?.cancel()
+    loadedPlaylistKey = null
+    offlineRetryJob?.cancel()
     controlsHideJob?.cancel()
     zapOverlayJob?.cancel()
     zapBufferWatchdogJob?.cancel()

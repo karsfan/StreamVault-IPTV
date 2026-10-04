@@ -128,7 +128,8 @@ object ChannelNormalizer {
     fun classify(
         channelName: String,
         providerId: Long,
-        streamUrl: String = ""
+        streamUrl: String = "",
+        groupTitle: String? = null
     ): ChannelClassification {
         val originalName = channelName.trim().ifBlank { "Channel" }
         val lowerName = originalName.lowercase(Locale.ROOT)
@@ -141,6 +142,7 @@ object ChannelNormalizer {
         }
         val regionHint = resolveRegionHint(originalName, extractedTags)
         val languageHint = resolveLanguageHint(lowerName, extractedTags)
+            ?: resolveGroupLanguageHint(groupTitle)
         val declaredHeight = resolveDeclaredHeight(lowerName, lowerUrl)
         val frameRate = frameRateRegex.find(lowerName)?.groupValues?.get(1)?.toIntOrNull()
         val codecLabel = resolveCodecLabel(lowerName, lowerUrl)
@@ -263,6 +265,39 @@ object ChannelNormalizer {
      */
     fun sameLanguage(first: String?, second: String?): Boolean =
         first == null || second == null || first.equals(second, ignoreCase = true)
+
+    /**
+     * The group a provider files a channel under is often the only thing that says which feed it
+     * is: on one real playlist 4,954 of 5,304 entries sit in "English" / "24/7 English" while the
+     * Italian ones are spread over Sky, Digitale Terrestre and Musica, and both carry the exact
+     * same channel name ("VH1"). Only foreign languages are listed: the list's own language is
+     * left untagged so untagged feeds stay compatible with each other.
+     */
+    private val groupLanguageWords = linkedMapOf(
+        "english" to "EN",
+        "inglese" to "EN",
+        "spanish" to "ES",
+        "spagna" to "ES",
+        "espana" to "ES",
+        "french" to "FR",
+        "francia" to "FR",
+        "francese" to "FR",
+        "german" to "DE",
+        "germania" to "DE",
+        "deutsch" to "DE",
+        "portuguese" to "PT",
+        "portogallo" to "PT",
+        "arabic" to "AR",
+        "arabo" to "AR"
+    )
+
+    private fun resolveGroupLanguageHint(groupTitle: String?): String? {
+        val lower = groupTitle?.stripAccents()?.lowercase(Locale.ROOT)?.takeIf { it.isNotBlank() }
+            ?: return null
+        return groupLanguageWords.entries
+            .firstOrNull { (word, _) -> containsStandalone(lower, word) }
+            ?.value
+    }
 
     private val leadingLanguageTagRegex = Regex("""^\s*\|?\s*([a-z]{2,10})\s*[|:\-]\s*\S""")
     private val trailingLanguageTagRegex = Regex("""[|:]\s*([a-z]{2,10})\s*$""")

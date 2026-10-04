@@ -1,5 +1,8 @@
 package com.streamvault.feature.playback.player
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.lifecycle.viewModelScope
 import com.streamvault.domain.model.ContentType
 import com.streamvault.domain.model.ProviderType
@@ -9,6 +12,36 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val PROVIDER_AUTH_RETRY_GRACE_MS = 1_200L
+private const val OFFLINE_RETRY_INTERVAL_MS = 3_000L
+private const val OFFLINE_RETRY_ATTEMPTS = 40
+
+/**
+ * Every automatic recovery assumes the stream is at fault. When it is the wifi that dropped,
+ * each source fails in turn, so the player walks the whole variant list, forgets the variant
+ * that was working and marks the channel bad. Checking first keeps the stream and waits.
+ */
+internal fun PlayerViewModel.hasNetworkConnection(): Boolean {
+    val manager = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        ?: return true
+    val network = manager.activeNetwork ?: return false
+    val capabilities = manager.getNetworkCapabilities(network) ?: return false
+    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+}
+
+/** Waits for the network to come back and replays the same stream, up to two minutes. */
+internal fun PlayerViewModel.scheduleOfflineRetry() {
+    if (offlineRetryJob?.isActive == true) return
+    offlineRetryJob = viewModelScope.launch {
+        repeat(OFFLINE_RETRY_ATTEMPTS) {
+            delay(OFFLINE_RETRY_INTERVAL_MS)
+            if (hasNetworkConnection()) {
+                appendRecoveryAction("Network is back, replaying the same stream")
+                retryStream(currentStreamUrl, currentChannelFlow.value?.epgChannelId)
+                return@launch
+            }
+        }
+    }
+}
 
 internal fun PlayerViewModel.buildRecoveryActions(recoveryType: PlayerRecoveryType): List<PlayerNoticeAction> {
     return PlayerRecoveryPolicy.buildActions(

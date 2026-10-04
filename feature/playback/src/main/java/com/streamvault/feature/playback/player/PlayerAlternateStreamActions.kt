@@ -203,6 +203,18 @@ internal fun PlayerViewModel.tryAlternateStreamInternal(
     preferXtreamTsFallback: Boolean = false,
     allowXtreamTsFallback: Boolean = true
 ): Boolean {
+    // With no network every source fails in turn: keep this one and wait instead of burning
+    // the whole variant list and the remembered variant with it.
+    if (!hasNetworkConnection()) {
+        appendRecoveryAction("No network: kept the current source")
+        showPlayerNotice(
+            message = appContext.getString(com.streamvault.feature.playback.R.string.player_error_network),
+            recoveryType = PlayerRecoveryType.SOURCE,
+            isRetryNotice = true
+        )
+        scheduleOfflineRetry()
+        return false
+    }
     forgetFailedPreferredVariant(channel)
     val candidate = selectNextLiveRecoveryCandidate(
         channel = channel,

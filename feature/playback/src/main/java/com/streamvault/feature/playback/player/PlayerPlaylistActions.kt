@@ -16,7 +16,16 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+
+/** What a loaded playlist is made of: reloading is only needed when one of these changes. */
+internal data class PlaylistKey(
+    val categoryId: Long,
+    val providerId: Long,
+    val isVirtual: Boolean,
+    val combinedProfileId: Long?
+)
 
 internal fun PlayerViewModel.observeCombinedLivePlaylist(
     profileId: Long,
@@ -195,8 +204,17 @@ internal fun PlayerViewModel.loadPlaylist(
     isVirtual: Boolean,
     initialChannelId: Long
 ) {
+    // Reloading the same playlist restarts a pipeline that reads every channel of the provider,
+    // so a zap inside the same category must not trigger it.
+    val key = PlaylistKey(categoryId, providerId, isVirtual, currentCombinedProfileId)
+    if (key == loadedPlaylistKey && playlistJob?.isActive == true && channelList.isNotEmpty()) return
+    loadedPlaylistKey = key
     playlistJob?.cancel()
-    playlistJob = playbackSessionScope()?.launch {
+    // The playlist belongs to the category, not to one playback session. Launched in the session
+    // scope it was cancelled by every zap and every variant switch, and on "All channels" (5,000+
+    // entries, each one classified and grouped) the pipeline never reached its first emission:
+    // the side list stayed at "Channels (0)" and up/down had nothing to step through.
+    playlistJob = viewModelScope.launch {
         val flows = currentCombinedProfileId?.let { profileId ->
             observeCombinedLivePlaylist(profileId, categoryId)
         } ?: if (isVirtual) {

@@ -71,6 +71,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import android.app.Application
 import javax.inject.Provider as InjectProvider
@@ -109,6 +110,8 @@ class HomeViewModel @Inject constructor(
     private companion object {
         const val MIN_CHANNEL_SEARCH_QUERY_LENGTH = 2
         const val CHANNEL_PAGE_SIZE = 200
+        const val MAX_RESTORE_PAGE_GROWTHS = 8
+        const val RESTORE_PAGE_TIMEOUT_MS = 3_000L
         const val CHANNEL_SEARCH_PAGE_SIZE = 300
         const val LOAD_MORE_THRESHOLD = 5
         const val ADAPTIVE_PREVIEW_REPRIME_DELAY_MS = 2_500L
@@ -125,6 +128,7 @@ class HomeViewModel @Inject constructor(
 
     private val _localChannels = MutableStateFlow<List<Channel>>(emptyList())
     private val _channelBrowseLimit = MutableStateFlow(CHANNEL_PAGE_SIZE)
+    private var ensureChannelLoadedJob: Job? = null
     private val _channelSearchLimit = MutableStateFlow(CHANNEL_SEARCH_PAGE_SIZE)
     private val _preferredInitialCategoryId = MutableStateFlow<Long?>(null)
     private val _visibleChannelWindow = MutableStateFlow<Set<Long>>(emptySet())
@@ -1024,6 +1028,28 @@ class HomeViewModel @Inject constructor(
         if (_uiState.value.isChannelReorderMode) return
         _channelSearchLimit.value = CHANNEL_SEARCH_PAGE_SIZE
         _uiState.update { it.copy(channelSearchQuery = query) }
+    }
+
+    /**
+     * The browse list is paged, so a channel far down the playlist is not loaded when the screen
+     * comes back from the player: focus restore found no row for it and fell back to the first
+     * channel of the list. Grow the window until the saved channel is in it, or the list ends.
+     */
+    fun ensureChannelLoaded(channelId: Long) {
+        if (_uiState.value.filteredChannels.any { it.id == channelId }) return
+        ensureChannelLoadedJob?.cancel()
+        ensureChannelLoadedJob = viewModelScope.launch {
+            repeat(MAX_RESTORE_PAGE_GROWTHS) {
+                val state = _uiState.value
+                if (state.filteredChannels.any { it.id == channelId }) return@launch
+                if (!state.hasMoreChannels) return@launch
+                val loaded = state.filteredChannels.size
+                _channelBrowseLimit.update { it * 2 }
+                withTimeoutOrNull(RESTORE_PAGE_TIMEOUT_MS) {
+                    _uiState.first { it.filteredChannels.size > loaded || !it.hasMoreChannels }
+                } ?: return@launch
+            }
+        }
     }
 
     fun loadMoreChannels() {

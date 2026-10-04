@@ -385,6 +385,8 @@ class PlayerViewModel @Inject constructor(
     private var lastObservedPlaybackState: PlaybackState = PlaybackState.IDLE
 
     internal var playlistJob: Job? = null
+    internal var offlineRetryJob: Job? = null
+    internal var loadedPlaylistKey: PlaylistKey? = null
     internal var recentChannelsJob: Job? = null
     internal var lastVisitedCategoryJob: Job? = null
     internal var controlsHideJob: Job? = null

@@ -99,6 +99,7 @@ fun PlayerViewModel.selectCategoryFromOverlay(category: Category) {
 
 fun PlayerViewModel.openEpgOverlay() {
     clearNumericChannelInput()
+    ensureChannelListLoaded()
     showEpgOverlayFlow.value = true
     showChannelListOverlayFlow.value = false
     showFullGuideOverlayFlow.value = false
@@ -110,6 +111,7 @@ fun PlayerViewModel.openEpgOverlay() {
 fun PlayerViewModel.openFullGuideOverlay() {
     if (currentContentType != ContentType.LIVE) return
     clearNumericChannelInput()
+    ensureChannelListLoaded()
     showFullGuideOverlayFlow.value = true
     showChannelListOverlayFlow.value = false
     showCategoryListOverlayFlow.value = false
