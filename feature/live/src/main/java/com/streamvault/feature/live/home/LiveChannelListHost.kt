@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.*
@@ -74,7 +75,13 @@ fun LiveChannelListHost(
         if (index < 0) return@LaunchedEffect
         restoredOnEntry = true
         channelListState.scrollToItem(index)
-        runCatching { channelFocusRequesters[target]?.requestFocus() }
+        // The row exists only once the scroll has laid it out, so the focus request is retried.
+        repeat(5) {
+            withFrameNanos { }
+            val focused = runCatching { channelFocusRequesters[target]?.requestFocus() }.isSuccess &&
+                channelFocusRequesters[target] != null
+            if (focused) return@LaunchedEffect
+        }
     }
 
     LaunchedEffect(channelListState, channels, focusedChannelId) {

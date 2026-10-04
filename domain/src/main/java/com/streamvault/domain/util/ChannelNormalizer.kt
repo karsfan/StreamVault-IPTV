@@ -264,6 +264,15 @@ object ChannelNormalizer {
     fun sameLanguage(first: String?, second: String?): Boolean =
         first == null || second == null || first.equals(second, ignoreCase = true)
 
+    private val leadingLanguageTagRegex = Regex("""^\s*\|?\s*([a-z]{2,10})\s*[|:\-]\s*\S""")
+    private val trailingLanguageTagRegex = Regex("""[|:]\s*([a-z]{2,10})\s*$""")
+
+    /**
+     * Only a real tag counts: bracketed, or fenced by | or : at either end of the name. Matching
+     * any standalone word read a language out of "Leave It To Beaver" (IT), "Robert De Niro
+     * Movies" (DE) and "EN Tout Cas" (EN): on one real 5,300 channel playlist 45 of the 419 hits
+     * were titles, and those false tags would split a channel away from its own variants.
+     */
     private fun resolveLanguageHint(lowerName: String, extractedTags: List<String>): String? {
         val extractedMatch = extractedTags.firstNotNullOfOrNull { tag ->
             languageTags[tag.trim().lowercase(Locale.ROOT)]
@@ -271,7 +280,9 @@ object ChannelNormalizer {
         if (extractedMatch != null) {
             return extractedMatch
         }
-        return languageTags.entries.firstOrNull { (token, _) -> containsStandalone(lowerName, token) }?.value
+        val fenced = leadingLanguageTagRegex.find(lowerName)?.groupValues?.getOrNull(1)
+            ?: trailingLanguageTagRegex.find(lowerName)?.groupValues?.getOrNull(1)
+        return fenced?.let { languageTags[it] }
     }
 
     private fun buildRawTags(

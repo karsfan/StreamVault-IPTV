@@ -192,7 +192,7 @@ class SearchViewModel @Inject constructor(
                     emit(guideMatches(provider.id, query))
                 }
             } else {
-                flowOf(emptyList())
+                flowOf(emptyList<GuideSearchMatch>())
             }
             combine(
                 searchContent(
