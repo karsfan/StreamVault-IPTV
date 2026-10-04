@@ -1136,7 +1136,6 @@ private fun SearchStatusCard(
     }
 }
 
-@Composable
 /** A channel found by what it is showing: logo, channel, programme and when it starts. */
 @Composable
 private fun GuideMatchCard(
@@ -1199,6 +1198,7 @@ private fun GuideMatchCard(
     }
 }
 
+@Composable
 private fun <T : Any> SearchResultRail(
     title: String,
     items: List<T>,
