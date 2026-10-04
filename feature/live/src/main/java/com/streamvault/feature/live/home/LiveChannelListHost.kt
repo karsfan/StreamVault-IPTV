@@ -17,6 +17,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.streamvault.domain.model.Channel
 import kotlinx.coroutines.flow.distinctUntilChanged
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.flow.filter
 
 @Composable
@@ -58,6 +62,19 @@ fun LiveChannelListHost(
         }
 
         runCatching { channelFocusRequesters[draggingChannelId]?.requestFocus() }
+    }
+
+    // Coming back from the player composes this list again without a lifecycle resume, so nothing
+    // restored the position: the list opened at the top and the saved focus had no row to land on.
+    var restoredOnEntry by remember { mutableStateOf(false) }
+    LaunchedEffect(channels, focusedChannelId, isReorderMode) {
+        if (restoredOnEntry || isReorderMode) return@LaunchedEffect
+        val target = focusedChannelId ?: return@LaunchedEffect
+        val index = channels.indexOfFirst { it.id == target }
+        if (index < 0) return@LaunchedEffect
+        restoredOnEntry = true
+        channelListState.scrollToItem(index)
+        runCatching { channelFocusRequesters[target]?.requestFocus() }
     }
 
     LaunchedEffect(channelListState, channels, focusedChannelId) {

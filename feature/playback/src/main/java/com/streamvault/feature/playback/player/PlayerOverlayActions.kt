@@ -16,6 +16,7 @@ private const val CHANNEL_LIST_GUIDE_RECHECK_MS = 5 * 60_000L
 
 fun PlayerViewModel.openChannelListOverlay() {
     clearNumericChannelInput()
+    ensureChannelListLoaded()
     showChannelListOverlayFlow.value = true
     showCategoryListOverlayFlow.value = false
     showEpgOverlayFlow.value = false
@@ -23,6 +24,30 @@ fun PlayerViewModel.openChannelListOverlay() {
     showChannelInfoOverlayFlow.value = false
     showControlsFlow.value = false
     scheduleLiveOverlayAutoHide()
+}
+
+/**
+ * A channel opened from the guide, from a recent row or from the home shelves carries no category,
+ * so the player never loaded a playlist and the side list came up empty ("Channels (0)" with only
+ * the recent ones). Fall back to the channel's own category, then to the whole provider.
+ */
+internal fun PlayerViewModel.ensureChannelListLoaded() {
+    if (currentContentType != ContentType.LIVE || channelList.isNotEmpty()) return
+    val channel = currentChannelFlow.value
+    val knownCategoryId = currentCategoryId.takeIf { it != -1L }
+    val categoryId = knownCategoryId ?: channel?.categoryId ?: ChannelRepository.ALL_CHANNELS_ID
+    val providerId = channel?.providerId?.takeIf { it > 0L } ?: currentProviderId
+    if (providerId <= 0L) return
+    // "All channels" is read like a normal category; only recents and favourites are virtual.
+    if (knownCategoryId == null) isVirtualCategory = false
+    currentCategoryId = categoryId
+    activeCategoryIdFlow.value = categoryId
+    loadPlaylist(
+        categoryId = categoryId,
+        providerId = providerId,
+        isVirtual = isVirtualCategory,
+        initialChannelId = currentContentId
+    )
 }
 
 /**
