@@ -285,6 +285,8 @@
   <string name="search_hint">Zoeken...</string>
   <string name="search_incorrect_pin">Onjuiste pincode</string>
   <string name="search_live_tv">Live-tv</string>
+  <string name="search_guide_matches">In de gids</string>
+  <string name="search_guide_now">Nu</string>
   <string name="search_loading_subtitle">Live TV, films en series controleren.</string>
   <string name="search_loading_title">Bibliotheek doorzoeken...</string>
   <string name="search_movies">Films</string>

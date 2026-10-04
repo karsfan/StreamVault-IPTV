@@ -285,6 +285,8 @@
   <string name="search_hint">Keresés...</string>
   <string name="search_incorrect_pin">Hibás PIN</string>
   <string name="search_live_tv">Élő TV</string>
+  <string name="search_guide_matches">A műsorújságban</string>
+  <string name="search_guide_now">Most</string>
   <string name="search_loading_subtitle">Indexelt élő TV, filmek és sorozatok ellenőrzése.</string>
   <string name="search_loading_title">Könyvtár keresése...</string>
   <string name="search_movies">Filmek</string>

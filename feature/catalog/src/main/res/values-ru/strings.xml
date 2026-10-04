@@ -285,6 +285,8 @@
   <string name="search_hint">Поиск...</string>
   <string name="search_incorrect_pin">Неверный PIN</string>
   <string name="search_live_tv">Прямой эфир</string>
+  <string name="search_guide_matches">В программе</string>
+  <string name="search_guide_now">Сейчас</string>
   <string name="search_loading_subtitle">Проверка индекса: прямое ТВ, фильмы и сериалы.</string>
   <string name="search_loading_title">Поиск в библиотеке...</string>
   <string name="search_movies">Фильмы</string>

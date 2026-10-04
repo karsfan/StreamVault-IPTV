@@ -285,6 +285,8 @@
   <string name="search_hint">搜索...</string>
   <string name="search_incorrect_pin">PIN 错误</string>
   <string name="search_live_tv">直播电视</string>
+  <string name="search_guide_matches">节目表中</string>
+  <string name="search_guide_now">正在播出</string>
   <string name="search_loading_subtitle">正在检索直播电视、电影和剧集索引。</string>
   <string name="search_loading_title">正在搜索库...</string>
   <string name="search_movies">电影</string>

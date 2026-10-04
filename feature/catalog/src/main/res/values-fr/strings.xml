@@ -285,6 +285,8 @@
   <string name="search_hint">Rechercher...</string>
   <string name="search_incorrect_pin">Code PIN incorrect</string>
   <string name="search_live_tv">Télévision en direct</string>
+  <string name="search_guide_matches">Dans le guide</string>
+  <string name="search_guide_now">Maintenant</string>
   <string name="search_loading_subtitle">Vérification de la TV en direct indexée, des films et des séries.</string>
   <string name="search_loading_title">Recherche dans la bibliothèque…</string>
   <string name="search_movies">Films</string>

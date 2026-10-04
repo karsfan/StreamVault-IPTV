@@ -285,6 +285,8 @@
   <string name="search_hint">Søg...</string>
   <string name="search_incorrect_pin">Forkert pinkode</string>
   <string name="search_live_tv">Live tv</string>
+  <string name="search_guide_matches">I guiden</string>
+  <string name="search_guide_now">Nu</string>
   <string name="search_loading_subtitle">Kontrollerer indekseret Live TV, film og serier.</string>
   <string name="search_loading_title">Søger i bibliotek...</string>
   <string name="search_movies">Film</string>

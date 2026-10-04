@@ -285,6 +285,8 @@
   <string name="search_hint">검색...</string>
   <string name="search_incorrect_pin">잘못된 PIN</string>
   <string name="search_live_tv">라이브 TV</string>
+  <string name="search_guide_matches">편성표에서</string>
+  <string name="search_guide_now">지금</string>
   <string name="search_loading_subtitle">색인된 라이브 TV, 영화, 시리즈를 확인 중.</string>
   <string name="search_loading_title">라이브러리 검색 중...</string>
   <string name="search_movies">영화</string>

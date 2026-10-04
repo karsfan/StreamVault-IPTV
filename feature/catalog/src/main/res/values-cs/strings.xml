@@ -285,6 +285,8 @@
   <string name="search_hint">Hledat...</string>
   <string name="search_incorrect_pin">Nesprávný PIN</string>
   <string name="search_live_tv">Živé TV</string>
+  <string name="search_guide_matches">V programu</string>
+  <string name="search_guide_now">Teď</string>
   <string name="search_loading_subtitle">Kontrola indexované živé TV, filmů a seriálů.</string>
   <string name="search_loading_title">Vyhledávání v knihovně…</string>
   <string name="search_movies">Filmy</string>

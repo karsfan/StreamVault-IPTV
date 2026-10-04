@@ -285,6 +285,8 @@
   <string name="search_hint">Пошук...</string>
   <string name="search_incorrect_pin">Невірний PIN</string>
   <string name="search_live_tv">Прямий ефір</string>
+  <string name="search_guide_matches">У програмі</string>
+  <string name="search_guide_now">Зараз</string>
   <string name="search_loading_subtitle">Перевірка індексованого Live TV, фільмів та серіалів.</string>
   <string name="search_loading_title">Пошук у бібліотеці...</string>
   <string name="search_movies">Фільми</string>

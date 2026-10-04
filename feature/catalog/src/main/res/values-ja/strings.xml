@@ -285,6 +285,8 @@
   <string name="search_hint">検索...</string>
   <string name="search_incorrect_pin">PINが違います</string>
   <string name="search_live_tv">ライブテレビ</string>
+  <string name="search_guide_matches">番組表から</string>
+  <string name="search_guide_now">放送中</string>
   <string name="search_loading_subtitle">インデックス化されたライブTV、映画、シリーズを確認中。</string>
   <string name="search_loading_title">ライブラリを検索中...</string>
   <string name="search_movies">映画</string>

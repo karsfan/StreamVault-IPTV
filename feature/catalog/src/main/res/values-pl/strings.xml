@@ -285,6 +285,8 @@
   <string name="search_hint">Szukaj...</string>
   <string name="search_incorrect_pin">Nieprawidłowy PIN</string>
   <string name="search_live_tv">Telewizja na żywo</string>
+  <string name="search_guide_matches">W programie</string>
+  <string name="search_guide_now">Teraz</string>
   <string name="search_loading_subtitle">Sprawdzanie zindeksowanej TV na żywo, filmów i seriali.</string>
   <string name="search_loading_title">Wyszukiwanie w bibliotece…</string>
   <string name="search_movies">Filmy</string>

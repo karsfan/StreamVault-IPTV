@@ -285,6 +285,8 @@
   <string name="search_hint">Cauta...</string>
   <string name="search_incorrect_pin">PIN incorect</string>
   <string name="search_live_tv">TV în direct</string>
+  <string name="search_guide_matches">În ghid</string>
+  <string name="search_guide_now">Acum</string>
   <string name="search_loading_subtitle">Se verifică Live TV, filme și seriale indexate.</string>
   <string name="search_loading_title">Se caută în bibliotecă...</string>
   <string name="search_movies">Filme</string>

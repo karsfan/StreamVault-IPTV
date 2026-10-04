@@ -285,6 +285,8 @@
   <string name="search_hint">Ara...</string>
   <string name="search_incorrect_pin">Yanlış PIN</string>
   <string name="search_live_tv">Canlı TV</string>
+  <string name="search_guide_matches">Rehberde</string>
+  <string name="search_guide_now">Şimdi</string>
   <string name="search_loading_subtitle">İndekslenmiş canlı TV, filmler ve diziler kontrol ediliyor.</string>
   <string name="search_loading_title">Kitaplık aranıyor...</string>
   <string name="search_movies">Filmler</string>

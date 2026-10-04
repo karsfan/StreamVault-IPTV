@@ -29,6 +29,9 @@ internal fun PlayerViewModel.finalizePreparedPlaybackContext(
         isVirtualCategory = isVirtual
         loadPlaylist(categoryId, providerId, isVirtual, internalChannelId)
     } else {
+        // Opened without a category (guide, recents, home shelves): with no playlist loaded the
+        // side list is empty and up/down and the number keys have nothing to step through.
+        if (currentContentType == ContentType.LIVE && channelList.isEmpty()) ensureChannelListLoaded()
         if (channelList.isNotEmpty() && internalChannelId != -1L) {
             currentChannelIndex = channelList.indexOfFirst { it.id == internalChannelId }
             if (currentChannelIndex == -1) {

@@ -53,6 +53,7 @@ import com.streamvault.core.ui.components.TvEmptyState
 import com.streamvault.feature.catalog.api.CatalogNavigationChrome
 import com.streamvault.feature.catalog.api.CatalogScaffoldContent
 import com.streamvault.core.ui.design.AppColors
+import com.streamvault.core.ui.image.ChannelLogoBadge
 import com.streamvault.core.ui.design.requestFocusSafely
 import com.streamvault.core.ui.interaction.mouseClickable
 import com.streamvault.core.ui.theme.*
@@ -63,7 +64,10 @@ import com.streamvault.domain.model.ContentType
 import com.streamvault.domain.model.Movie
 import com.streamvault.domain.model.SearchHistoryScope
 import com.streamvault.domain.model.Series
+import com.streamvault.domain.model.Program
 import com.streamvault.domain.repository.CategoryRepository
+import com.streamvault.domain.repository.ChannelRepository
+import com.streamvault.domain.repository.EpgRepository
 import com.streamvault.domain.repository.FavoriteRepository
 import com.streamvault.domain.repository.ProviderRepository
 import com.streamvault.domain.usecase.SearchContent
@@ -73,7 +77,9 @@ import com.streamvault.domain.model.RecordingStatus
 import com.streamvault.domain.util.AdultContentVisibilityPolicy
 import com.streamvault.core.navigation.AppDestination
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -89,11 +95,16 @@ class SearchViewModel @Inject constructor(
     private val parentalControlManager: ParentalControlManager,
     private val favoriteRepository: FavoriteRepository,
     private val categoryRepository: CategoryRepository,
-    private val recordingManager: RecordingManager
+    private val recordingManager: RecordingManager,
+    private val epgRepository: EpgRepository,
+    private val channelRepository: ChannelRepository
 ) : ViewModel() {
     private companion object {
         const val MAX_RESULTS_PER_SECTION = 120
         const val MAX_RECENT_QUERIES = 6
+        const val MAX_GUIDE_MATCHES = 24
+        const val GUIDE_SEARCH_PAST_MS = 60L * 60L * 1000L
+        const val GUIDE_SEARCH_AHEAD_MS = 48L * 60L * 60L * 1000L
     }
 
     private val _query = MutableStateFlow("")
@@ -175,12 +186,23 @@ class SearchViewModel @Inject constructor(
                 )
             )
         } else {
-            searchContent(
-                providerId = provider.id,
-                query = query,
-                scope = tab.toSearchScope(),
-                maxResultsPerSection = MAX_RESULTS_PER_SECTION
-            ).map { results ->
+            val guideFlow = if (tab == SearchTab.ALL || tab == SearchTab.LIVE) {
+                flow {
+                    emit(emptyList<GuideSearchMatch>())
+                    emit(guideMatches(provider.id, query))
+                }
+            } else {
+                flowOf(emptyList())
+            }
+            combine(
+                searchContent(
+                    providerId = provider.id,
+                    query = query,
+                    scope = tab.toSearchScope(),
+                    maxResultsPerSection = MAX_RESULTS_PER_SECTION
+                ),
+                guideFlow
+            ) { results, guide ->
                 val filterAdult = !AdultContentVisibilityPolicy.showInAggregatedSurfaces(level)
                 SearchUiState(
                     channels = if (filterAdult)
@@ -200,7 +222,12 @@ class SearchViewModel @Inject constructor(
                     parentalControlLevel = level,
                     hasActiveProvider = true,
                     queryLength = trimmedQueryLength,
-                    unlockedCategoryIds = unlockedIds
+                    unlockedCategoryIds = unlockedIds,
+                    guideMatches = if (filterAdult) {
+                        guide.filterNot { it.channel.isAdult || it.channel.isUserProtected }
+                    } else {
+                        guide
+                    }
                 )
             }.onStart {
                 emit(
@@ -216,6 +243,44 @@ class SearchViewModel @Inject constructor(
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SearchUiState())
+
+    /**
+     * What the guide has on this title, so searching "Blue Bloods" finds the channel showing it
+     * and not only channels whose name matches. One snapshot of the catalogue per search, off the
+     * main thread: the programme rows carry provider keys, the channels carry the names.
+     */
+    private suspend fun guideMatches(providerId: Long, query: String): List<GuideSearchMatch> =
+        withContext(Dispatchers.Default) {
+            val now = System.currentTimeMillis()
+            val programs = runCatching {
+                epgRepository.searchPrograms(
+                    providerId = providerId,
+                    query = query,
+                    startTime = now - GUIDE_SEARCH_PAST_MS,
+                    endTime = now + GUIDE_SEARCH_AHEAD_MS
+                ).first()
+            }.getOrDefault(emptyList())
+            if (programs.isEmpty()) return@withContext emptyList()
+
+            val programsByProviderKey = programs.groupBy { it.channelId }
+            val channels = runCatching { channelRepository.getChannels(providerId).first() }
+                .getOrDefault(emptyList())
+
+            channels.mapNotNull { channel ->
+                val keys = buildList {
+                    channel.epgChannelId?.trim()?.takeIf(String::isNotEmpty)?.let(::add)
+                    channel.streamId.takeIf { it > 0L }?.toString()?.let(::add)
+                }
+                val program = keys.asSequence()
+                    .flatMap { key -> programsByProviderKey[key].orEmpty().asSequence() }
+                    .filter { it.endTime > now }
+                    .minByOrNull { it.startTime }
+                    ?: return@mapNotNull null
+                GuideSearchMatch(channel = channel, program = program)
+            }
+                .sortedBy { it.program.startTime }
+                .take(MAX_GUIDE_MATCHES)
+        }
 
     fun onQueryChange(newQuery: String) {
         _query.value = newQuery
@@ -356,11 +421,19 @@ data class SearchUiState(
     val hasActiveProvider: Boolean = false,
     val queryLength: Int = 0,
     val unlockedCategoryIds: Set<Long> = emptySet(),
-    val catalogCompleteness: CatalogCompleteness = CatalogCompleteness.COMPLETE
+    val catalogCompleteness: CatalogCompleteness = CatalogCompleteness.COMPLETE,
+    val guideMatches: List<GuideSearchMatch> = emptyList()
 ) {
-    val isEmpty: Boolean get() = hasSearched && channels.isEmpty() && movies.isEmpty() && series.isEmpty()
+    val isEmpty: Boolean get() =
+        hasSearched && channels.isEmpty() && movies.isEmpty() && series.isEmpty() && guideMatches.isEmpty()
     val totalResults: Int get() = channels.size + movies.size + series.size
 }
+
+/** A channel found through what it is showing, not through its name. */
+data class GuideSearchMatch(
+    val channel: Channel,
+    val program: Program
+)
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
@@ -626,6 +699,36 @@ fun SearchScreen(
                             uiState = uiState,
                             onBuildCompleteIndex = viewModel::buildCompleteStalkerSearchIndex
                         )
+                    }
+
+                    if (selectedTab == SearchTab.ALL || selectedTab == SearchTab.LIVE) {
+                        if (uiState.guideMatches.isNotEmpty()) {
+                            item {
+                                SearchResultRail(
+                                    title = stringResource(R.string.search_guide_matches),
+                                    items = uiState.guideMatches,
+                                    keySelector = { "${it.channel.id}:${it.program.startTime}" }
+                                ) { match ->
+                                    val matchLocked = isLocked(
+                                        categoryId = match.channel.categoryId,
+                                        isAdult = match.channel.isAdult,
+                                        isUserProtected = match.channel.isUserProtected
+                                    )
+                                    GuideMatchCard(
+                                        match = match,
+                                        nowMs = nowMs,
+                                        onClick = {
+                                            if (matchLocked) {
+                                                pendingChannel = match.channel
+                                                showPinDialog = true
+                                            } else {
+                                                onChannelClick(match.channel)
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     if (selectedTab == SearchTab.ALL) {
@@ -1034,6 +1137,68 @@ private fun SearchStatusCard(
 }
 
 @Composable
+/** A channel found by what it is showing: logo, channel, programme and when it starts. */
+@Composable
+private fun GuideMatchCard(
+    match: GuideSearchMatch,
+    nowMs: Long,
+    onClick: () -> Unit
+) {
+    val timeFormat = remember { java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()) }
+    val isOnNow = match.program.startTime <= nowMs && match.program.endTime > nowMs
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.width(260.dp),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(14.dp)),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = AppColors.SurfaceElevated,
+            focusedContainerColor = AppColors.SurfaceEmphasis
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ChannelLogoBadge(
+                channelName = match.channel.name,
+                logoUrl = match.channel.logoUrl,
+                backgroundColor = AppColors.SurfaceEmphasis,
+                textStyle = MaterialTheme.typography.labelMedium,
+                textColor = AppColors.TextSecondary,
+                modifier = Modifier.size(44.dp)
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = match.program.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = AppColors.TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = match.channel.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AppColors.TextSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = if (isOnNow) {
+                        stringResource(R.string.search_guide_now)
+                    } else {
+                        timeFormat.format(java.util.Date(match.program.startTime))
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isOnNow) AppColors.Brand else AppColors.TextTertiary,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
 private fun <T : Any> SearchResultRail(
     title: String,
     items: List<T>,

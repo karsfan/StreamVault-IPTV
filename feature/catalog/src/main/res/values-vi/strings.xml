@@ -285,6 +285,8 @@
   <string name="search_hint">Tìm kiếm...</string>
   <string name="search_incorrect_pin">PIN không đúng</string>
   <string name="search_live_tv">TV trực tiếp</string>
+  <string name="search_guide_matches">Trong lịch phát</string>
+  <string name="search_guide_now">Đang phát</string>
   <string name="search_loading_subtitle">Kiểm tra TV trực tiếp, phim và series đã lập chỉ mục.</string>
   <string name="search_loading_title">Đang tìm kiếm thư viện...</string>
   <string name="search_movies">Phim</string>

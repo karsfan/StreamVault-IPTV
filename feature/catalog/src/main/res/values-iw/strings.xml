@@ -285,6 +285,8 @@
   <string name="search_hint">חפש...</string>
   <string name="search_incorrect_pin">PIN שגוי</string>
   <string name="search_live_tv">טלוויזיה בשידור חי</string>
+  <string name="search_guide_matches">במדריך</string>
+  <string name="search_guide_now">עכשיו</string>
   <string name="search_loading_subtitle">בודק Live TV, סרטים וסדרות שנוספו לאינדקס.</string>
   <string name="search_loading_title">מחפש בספרייה...</string>
   <string name="search_movies">סרטים</string>

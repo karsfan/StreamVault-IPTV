@@ -285,6 +285,8 @@
   <string name="search_hint">Αναζήτηση...</string>
   <string name="search_incorrect_pin">Λάθος PIN</string>
   <string name="search_live_tv">Ζωντανή TV</string>
+  <string name="search_guide_matches">Στον οδηγό</string>
+  <string name="search_guide_now">Τώρα</string>
   <string name="search_loading_subtitle">Έλεγχος ευρετηρίου Live TV, ταινιών και σειρών.</string>
   <string name="search_loading_title">Αναζήτηση βιβλιοθήκης...</string>
   <string name="search_movies">Ταινίες</string>

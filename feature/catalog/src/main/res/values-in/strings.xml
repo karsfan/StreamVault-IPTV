@@ -285,6 +285,8 @@
   <string name="search_hint">Cari...</string>
   <string name="search_incorrect_pin">PIN salah</string>
   <string name="search_live_tv">siaran langsung</string>
+  <string name="search_guide_matches">Di panduan</string>
+  <string name="search_guide_now">Sekarang</string>
   <string name="search_loading_subtitle">Memeriksa Live TV, film, dan serial yang diindeks.</string>
   <string name="search_loading_title">Mencari pustaka...</string>
   <string name="search_movies">Film</string>

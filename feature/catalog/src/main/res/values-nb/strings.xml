@@ -285,6 +285,8 @@
   <string name="search_hint">Søk...</string>
   <string name="search_incorrect_pin">Feil PIN-kode</string>
   <string name="search_live_tv">Direktesendt TV</string>
+  <string name="search_guide_matches">I guiden</string>
+  <string name="search_guide_now">Nå</string>
   <string name="search_loading_subtitle">Kontrollerer indeksert live-TV, filmer og serier.</string>
   <string name="search_loading_title">Søker i biblioteket...</string>
   <string name="search_movies">Filmer</string>
