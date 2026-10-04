@@ -141,7 +141,7 @@ fun PlayerViewModel.playChannelFromGuideOverlay(
         selectedGuideCategoryId != ChannelRepository.ALL_CHANNELS_ID -> selectedGuideCategoryId
         else -> ChannelRepository.ALL_CHANNELS_ID
     }
-    val categoryIsVirtual = playbackCategoryId == VirtualCategoryIds.FAVORITES || playbackCategoryId < 0L
+    val categoryIsVirtual = VirtualCategoryIds.isVirtual(playbackCategoryId)
     val currentListIndex = channelList.indexOfFirst { it.id == channel.id }
 
     clearNumericChannelInput()

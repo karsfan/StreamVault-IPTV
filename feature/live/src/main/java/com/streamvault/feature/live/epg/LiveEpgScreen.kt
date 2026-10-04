@@ -213,9 +213,7 @@ fun LiveEpgScreen(
             uiState.selectedCategoryId
         }
     }
-    val playerIsVirtualCategory = playerCategoryId == VirtualCategoryIds.FAVORITES ||
-        playerCategoryId == VirtualCategoryIds.RECENT ||
-        playerCategoryId < 0L
+    val playerIsVirtualCategory = VirtualCategoryIds.isVirtual(playerCategoryId)
 
     fun executeLockedGuideAction(action: LockedGuideAction) {
         when (action) {
