@@ -22,6 +22,25 @@ object ChannelNormalizer {
     private val nonAlphaNumericRegex = Regex("""[^a-z0-9 ]""")
     private val frameRateRegex = Regex("""(?<!\d)(24|25|30|50|60)\s*fps(?!\d)""", RegexOption.IGNORE_CASE)
     private val heightRegex = Regex("""(?<!\d)(4320|2160|1440|1080|720|576|540|480|360|240)\s*p?(?!\d)""", RegexOption.IGNORE_CASE)
+    private val plusRegex = Regex("""\+""")
+    private val colonPipeRegex = Regex("""[:|]""")
+    private val combiningMarksRegex = Regex("\\p{InCombiningDiacriticalMarks}+")
+
+    // Classifying runs over every channel of a playlist each time the list is rebuilt, and Room
+    // rebuilds it on any write to the channels table, playback error counters included. On a
+    // 5,300 channel list that was the whole lag of All Channels on a slow TV, so a channel's
+    // classification is computed once and reused. Entries are immutable, so sharing is safe.
+    private const val CLASSIFY_CACHE_SIZE = 8_192
+    private data class ClassifyKey(
+        val name: String,
+        val providerId: Long,
+        val streamUrl: String,
+        val groupTitle: String?
+    )
+    private val classifyCache = object : LinkedHashMap<ClassifyKey, ChannelClassification>(256, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<ClassifyKey, ChannelClassification>?): Boolean =
+            size > CLASSIFY_CACHE_SIZE
+    }
 
     private val resolutionTags = linkedMapOf(
         "8k" to 4320,
@@ -110,7 +129,7 @@ object ChannelNormalizer {
             listOf("fps")
         )
         .sortedByDescending { it.length }
-        .map { phrase -> Regex("""(?<![a-z0-9])${Regex.escape(phrase)}(?![a-z0-9])""", RegexOption.IGNORE_CASE) }
+        .map { phrase -> phrase to Regex("""(?<![a-z0-9])${Regex.escape(phrase)}(?![a-z0-9])""", RegexOption.IGNORE_CASE) }
 
     fun getLogicalGroupId(channelName: String, providerId: Long): String =
         classify(channelName, providerId).logicalGroupId
@@ -130,6 +149,19 @@ object ChannelNormalizer {
         providerId: Long,
         streamUrl: String = "",
         groupTitle: String? = null
+    ): ChannelClassification {
+        val key = ClassifyKey(channelName, providerId, streamUrl, groupTitle)
+        synchronized(classifyCache) { classifyCache[key] }?.let { return it }
+        val computed = classifyUncached(channelName, providerId, streamUrl, groupTitle)
+        synchronized(classifyCache) { classifyCache[key] = computed }
+        return computed
+    }
+
+    private fun classifyUncached(
+        channelName: String,
+        providerId: Long,
+        streamUrl: String,
+        groupTitle: String?
     ): ChannelClassification {
         val originalName = channelName.trim().ifBlank { "Channel" }
         val lowerName = originalName.lowercase(Locale.ROOT)
@@ -184,7 +216,7 @@ object ChannelNormalizer {
                 codecLabel = codecLabel,
                 transportLabel = transportLabel,
                 frameRate = frameRate,
-                isHdr = lowerName.contains("hdr") || lowerName.contains("dolby vision") || Regex("""(?<![a-z0-9])dv(?![a-z0-9])""").containsMatchIn(lowerName),
+                isHdr = lowerName.contains("hdr") || lowerName.contains("dolby vision") || containsStandalone(lowerName, "dv"),
                 sourceHint = sourceHint,
                 regionHint = regionHint,
                 languageHint = languageHint,
@@ -198,15 +230,19 @@ object ChannelNormalizer {
             .replace(bracketRegex, " ")
             .replace(leadingRegionRegex, " ")
 
-        removableCanonicalPhrases.forEach { regex ->
-            cleaned = cleaned.replace(regex, " ")
+        // A plain substring test first: most names hold none of these ~40 phrases, and skipping
+        // the regex scan for them is most of the cost of the first pass over a large playlist.
+        // Safe because the steps above only blank text out, so nothing absent here appears later.
+        val lowerOriginal = originalName.lowercase(Locale.ROOT)
+        removableCanonicalPhrases.forEach { (phrase, regex) ->
+            if (lowerOriginal.contains(phrase)) cleaned = cleaned.replace(regex, " ")
         }
         cleaned = heightRegex.replace(cleaned, " ")
         cleaned = frameRateRegex.replace(cleaned, " ")
 
         cleaned = cleaned
-            .replace(Regex("""\+"""), " + ")
-            .replace(Regex("""[:|]"""), " ")
+            .replace(plusRegex, " + ")
+            .replace(colonPipeRegex, " ")
             .replace(separatorRegex, " ")
             .replace(collapseWhitespaceRegex, " ")
             .trim()
@@ -220,8 +256,7 @@ object ChannelNormalizer {
             return directHeight
         }
         resolutionTags.forEach { (tag, height) ->
-            val regex = Regex("""(?<![a-z0-9])${Regex.escape(tag)}(?![a-z0-9])""", RegexOption.IGNORE_CASE)
-            if (regex.containsMatchIn(lowerName)) {
+            if (containsStandalone(lowerName, tag)) {
                 return height
             }
         }
@@ -338,15 +373,29 @@ object ChannelNormalizer {
         regionHint?.let { add(it) }
         languageHint?.let { if (it != regionHint) add(it) }
         if (lowerName.contains("hdr")) add("HDR")
-        if (lowerName.contains("dolby vision") || Regex("""(?<![a-z0-9])dv(?![a-z0-9])""").containsMatchIn(lowerName)) {
+        if (lowerName.contains("dolby vision") || containsStandalone(lowerName, "dv")) {
             add("Dolby Vision")
         }
     }.distinct()
 
+    /**
+     * Same match as `(?<![a-z0-9])token(?![a-z0-9])`, without compiling a regex per call: this ran
+     * about seventy times per channel. Every caller passes text already lowercased.
+     */
     private fun containsStandalone(text: String, token: String): Boolean {
-        val regex = Regex("""(?<![a-z0-9])${Regex.escape(token)}(?![a-z0-9])""", RegexOption.IGNORE_CASE)
-        return regex.containsMatchIn(text)
+        if (token.isEmpty() || token.length > text.length) return false
+        var start = text.indexOf(token)
+        while (start >= 0) {
+            val end = start + token.length
+            val freeBefore = start == 0 || !text[start - 1].isAsciiWordChar()
+            val freeAfter = end == text.length || !text[end].isAsciiWordChar()
+            if (freeBefore && freeAfter) return true
+            start = text.indexOf(token, start + 1)
+        }
+        return false
     }
+
+    private fun Char.isAsciiWordChar(): Boolean = this in 'a'..'z' || this in 'A'..'Z' || this in '0'..'9'
 
     private fun heightToResolutionLabel(height: Int): String = when {
         height >= 4320 -> "8K"
@@ -369,6 +418,6 @@ object ChannelNormalizer {
     }
 
     private fun String.stripAccents(): String =
-        Normalizer.normalize(this, Normalizer.Form.NFD)
-            .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
+        if (all { it.code < 128 }) this
+        else Normalizer.normalize(this, Normalizer.Form.NFD).replace(combiningMarksRegex, "")
 }

@@ -132,4 +132,23 @@ class ChannelNormalizerTest {
         assertThat(ChannelNormalizer.isHashWrappedHeader("#EXTINF:-1")).isFalse()
         assertThat(ChannelNormalizer.isHashWrappedHeader("Channel #1")).isFalse()
     }
+
+    @Test
+    fun `a tag only counts as a whole word, never inside a longer one`() {
+        val hdr = ChannelNormalizer.classify("Sky Cinema HDR", 1L).attributes
+        assertThat(hdr.isHdr).isTrue()
+        assertThat(hdr.declaredHeight).isNull()
+
+        assertThat(ChannelNormalizer.classify("Discovery DVD Classics", 1L).attributes.isHdr).isFalse()
+        assertThat(ChannelNormalizer.classify("Rai 1 MPEG-TS", 1L).attributes.transportLabel).isEqualTo("MPEG-TS")
+        assertThat(ChannelNormalizer.classify("Canale 5 Ultra HD", 1L).attributes.declaredHeight).isEqualTo(2160)
+    }
+
+    @Test
+    fun `a channel is classified once and reused on the next pass`() {
+        val first = ChannelNormalizer.classify("Rai 1 HD", 7L, "http://example.test/1.ts")
+        val second = ChannelNormalizer.classify("Rai 1 HD", 7L, "http://example.test/1.ts")
+
+        assertThat(second).isSameInstanceAs(first)
+    }
 }
