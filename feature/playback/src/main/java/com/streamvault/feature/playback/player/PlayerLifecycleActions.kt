@@ -200,8 +200,7 @@ internal fun PlayerViewModel.cleanupAfterCleared(mainPlayerEngine: PlayerEngine)
         playerPreviewCoordinator.beginReverseHandoff(
             channel = channel!!,
             streamInfo = streamInfo!!,
-            engine = activeEngine,
-            source = com.streamvault.feature.playback.preview.PreviewHandoffSource.HOME
+            engine = activeEngine
         )
         mainPlayerEngine.resetForReuse()
     } else {

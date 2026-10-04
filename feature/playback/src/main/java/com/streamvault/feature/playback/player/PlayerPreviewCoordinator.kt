@@ -29,13 +29,17 @@ class PlayerPreviewCoordinator @Inject constructor(
         handoffManager.clear(engine)
     }
 
+    // The screen that handed its preview over, so the engine goes back there on exit. Returned
+    // to HOME after coming from the Guide, the Home picked it up and kept it decoding off screen
+    // until the process died, and every fullscreen channel after that stayed black.
+    private var adoptedSource = PreviewHandoffSource.HOME
+
     internal fun beginReverseHandoff(
         channel: Channel,
         streamInfo: StreamInfo,
-        engine: PlayerEngine,
-        source: PreviewHandoffSource
+        engine: PlayerEngine
     ) {
-        handoffManager.beginReverseHandoff(channel, streamInfo, engine, source)
+        handoffManager.beginReverseHandoff(channel, streamInfo, engine, adoptedSource)
     }
 
     internal suspend fun tryAdoptFullscreenHandoff(
@@ -53,6 +57,7 @@ class PlayerPreviewCoordinator @Inject constructor(
             channelId = channelId,
             providerId = providerId.takeIf { it > 0L }
         ) ?: return false
+        adoptedSource = session.source
 
         if (shouldBypassForFireTvLiveHls(session.streamInfo)) {
             logInfo("Skipping preview handoff for Fire TV live HLS; fullscreen will prepare a fresh session.")
