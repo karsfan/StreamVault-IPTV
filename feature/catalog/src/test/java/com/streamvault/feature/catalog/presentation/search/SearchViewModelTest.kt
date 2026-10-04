@@ -11,6 +11,8 @@ import com.streamvault.data.preferences.PreferencesRepository
 import com.streamvault.domain.manager.ParentalControlManager
 import com.streamvault.domain.manager.RecordingManager
 import com.streamvault.domain.repository.CategoryRepository
+import com.streamvault.domain.repository.ChannelRepository
+import com.streamvault.domain.repository.EpgRepository
 import com.streamvault.domain.repository.FavoriteRepository
 import com.streamvault.domain.repository.ProviderRepository
 import com.streamvault.domain.usecase.SearchContent
@@ -46,6 +48,8 @@ class SearchViewModelTest {
     private val parentalControlManager: ParentalControlManager = mock()
     private val favoriteRepository: FavoriteRepository = mock()
     private val categoryRepository: CategoryRepository = mock()
+    private val epgRepository: EpgRepository = mock()
+    private val channelRepository: ChannelRepository = mock()
     private val recordingManager: RecordingManager = mock()
 
     private lateinit var viewModel: SearchViewModel
@@ -67,7 +71,9 @@ class SearchViewModelTest {
             parentalControlManager,
             favoriteRepository,
             categoryRepository,
-            recordingManager
+            recordingManager,
+            epgRepository,
+            channelRepository
         )
     }
 
@@ -121,7 +127,9 @@ class SearchViewModelTest {
             parentalControlManager,
             favoriteRepository,
             categoryRepository,
-            recordingManager
+            recordingManager,
+            epgRepository,
+            channelRepository
         )
 
         val collectorJob = backgroundScope.launch { viewModel.uiState.collect { } }
@@ -162,7 +170,9 @@ class SearchViewModelTest {
             parentalControlManager,
             favoriteRepository,
             categoryRepository,
-            recordingManager
+            recordingManager,
+            epgRepository,
+            channelRepository
         )
 
         val collectorJob = backgroundScope.launch { viewModel.uiState.collect { } }
@@ -211,7 +221,9 @@ class SearchViewModelTest {
             parentalControlManager,
             favoriteRepository,
             categoryRepository,
-            recordingManager
+            recordingManager,
+            epgRepository,
+            channelRepository
         )
 
         val collectorJob = backgroundScope.launch { viewModel.uiState.collect { } }
