@@ -370,8 +370,8 @@ fun MovieCard(
     watchProgress: Float = 0f,
     isReorderMode: Boolean = false,
     isDragging: Boolean = false,
-    width: Dp = 136.dp,
-    height: Dp = 204.dp
+    width: Dp = 126.dp,
+    height: Dp = 189.dp
 ) {
     val movieDescription = buildString {
         append(movie.name)
@@ -487,8 +487,8 @@ fun SeriesCard(
     subtitle: String? = null,
     isReorderMode: Boolean = false,
     isDragging: Boolean = false,
-    width: Dp = 136.dp,
-    height: Dp = 204.dp
+    width: Dp = 126.dp,
+    height: Dp = 189.dp
 ) {
     val seriesDescription = buildString {
         append(series.name)
