@@ -6,9 +6,17 @@ import org.junit.Test
 class AppTopLevelDestinationTest {
 
     @Test
-    fun `favorites ships in the default navigation bar`() {
-        assertThat(AppTopLevelDestination.defaultOrder)
-            .contains(AppTopLevelDestination.FAVORITES)
+    fun `the default bar opens on live and leaves home, favourites and plugins out`() {
+        assertThat(AppTopLevelDestination.defaultOrder.first())
+            .isEqualTo(AppTopLevelDestination.LIVE_TV)
+        assertThat(AppTopLevelDestination.defaultOrder).containsNoneOf(
+            AppTopLevelDestination.HOME,
+            AppTopLevelDestination.FAVORITES,
+            AppTopLevelDestination.PLUGINS
+        )
+        // Still selectable in Settings > Navigation.
+        assertThat(AppTopLevelDestination.fromStorage("favorites"))
+            .isEqualTo(AppTopLevelDestination.FAVORITES)
     }
 
     @Test
