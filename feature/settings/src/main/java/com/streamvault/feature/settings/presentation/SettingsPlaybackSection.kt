@@ -81,6 +81,7 @@ public fun LazyListScope.settingsPlaybackSection(
     onShowEthernetQualityDialogChange: (Boolean) -> Unit,
     targetItemId: String? = null,
     targetFocusModifier: Modifier = Modifier,
+    onCloseApp: () -> Unit = {},
 ) {
     item {
         val context = LocalContext.current
@@ -354,6 +355,12 @@ public fun LazyListScope.settingsPlaybackSection(
                     value = playbackSpeedLabel,
                     onClick = { onShowPlaybackSpeedDialogChange(true) },
                     modifier = if (targetItemId == "playback.speed") targetFocusModifier else Modifier,
+                )
+                ClickableSettingsRow(
+                    label = stringResource(R.string.settings_close_app),
+                    value = stringResource(R.string.settings_close_app_subtitle),
+                    onClick = onCloseApp,
+                    modifier = if (targetItemId == "playback.close_app") targetFocusModifier else Modifier,
                 )
             }
             if (page == null || page == SettingsPage.NETWORK) {

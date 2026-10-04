@@ -254,7 +254,7 @@ class MainActivity : ComponentActivity(), CatalogPlatformHost {
                                 coordinator = appNavigationCoordinator,
                                 settingsPlatformHost = settingsPlatformHost,
                                 catalogPlatformHost = this@MainActivity,
-                                onCloseApp = ::finishAffinity
+                                onCloseApp = ::forceCloseApp
                             )
                             LaunchedEffect(Unit) {
                                 dispatchPendingExternalNavigationRequests()
@@ -436,6 +436,15 @@ class MainActivity : ComponentActivity(), CatalogPlatformHost {
                 pendingExternalNavigationRequests.removeFirst()
             )
         }
+    }
+
+    /**
+     * Finishing the activities alone leaves the process alive, and with it the singleton player
+     * engine and every cache. Only killing the process gives the next launch a clean state.
+     */
+    private fun forceCloseApp() {
+        finishAndRemoveTask()
+        android.os.Process.killProcess(android.os.Process.myPid())
     }
 
     private fun shareLatestFailureReport() {

@@ -675,6 +675,7 @@
 <string name="settings_backup_share_prepare_failed">Impossible de préparer le fichier de sauvegarde.</string>
 <string name="settings_backup_usb_failed">Could not write the backup to the USB drive.</string>
 <string name="settings_close_app">Close app</string>
+<string name="settings_close_app_subtitle">Ends the app completely, like Force stop</string>
 <string name="settings_crash_report_missing">Aucun rapport d’incident disponible.</string>
 <string name="settings_crash_report_share_failed">Aucune application n’a pu recevoir le rapport d’incident.</string>
 <string name="settings_drive_choose_backup_subtitle">Select a saved snapshot to preview and restore.</string>

@@ -340,6 +340,7 @@ public fun SettingsContentPane(
                             onShowEthernetQualityDialogChange = { dialogState.showEthernetQualityDialog = it },
                             targetItemId = activeSearchTarget?.itemId,
                             targetFocusModifier = searchTargetModifier,
+                            onCloseApp = onCloseApp,
                         )
                     }
                     if (dialogState.selectedCategory in listOf(2, 8, 9, 10)) {
