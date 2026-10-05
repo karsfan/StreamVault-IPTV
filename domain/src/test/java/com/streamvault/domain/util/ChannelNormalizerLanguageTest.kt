@@ -10,7 +10,7 @@ class ChannelNormalizerLanguageTest {
         val italian = ChannelNormalizer.classify("Eurosport 1", 1L).attributes.languageHint
         val english = ChannelNormalizer.classify("EN| Eurosport 1", 1L).attributes.languageHint
 
-        assertThat(ChannelNormalizer.sameLanguage(italian, english)).isTrue()
+        assertThat(ChannelNormalizer.sameLanguage(italian, english)).isFalse()
         assertThat(ChannelNormalizer.sameLanguage("IT", english)).isFalse()
     }
 
@@ -21,7 +21,7 @@ class ChannelNormalizerLanguageTest {
 
         assertThat(italian).isNull()
         assertThat(english).isEqualTo("EN")
-        assertThat(ChannelNormalizer.sameLanguage(italian, english)).isTrue()
+        assertThat(ChannelNormalizer.sameLanguage(italian, english)).isFalse()
         assertThat(ChannelNormalizer.sameLanguage("IT", english)).isFalse()
     }
 
@@ -37,5 +37,14 @@ class ChannelNormalizerLanguageTest {
     fun `an untagged name still backs a tagged one, so a reserve playlist keeps working`() {
         assertThat(ChannelNormalizer.sameLanguage("IT", null)).isTrue()
         assertThat(ChannelNormalizer.sameLanguage(null, null)).isTrue()
+    }
+
+    @Test
+    fun `an untagged italian feed does not take an english one as a variant`() {
+        val italian = ChannelNormalizer.classify("Sky Nature", 1L, groupTitle = "Sky").attributes.languageHint
+        val english = ChannelNormalizer.classify("SKY NATURE FHD", 1L, groupTitle = "English").attributes.languageHint
+
+        assertThat(ChannelNormalizer.sameLanguage(italian, english)).isFalse()
+        assertThat(ChannelNormalizer.sameLanguage(english, italian)).isFalse()
     }
 }

@@ -294,12 +294,15 @@ object ChannelNormalizer {
     }
 
     /**
-     * Two feeds are the same channel only when nothing says they are in different languages.
-     * An untagged name stays compatible with everything: most Italian lists tag nothing, and a
-     * reserve playlist that writes "Rai 1" must still back "IT| Rai 1".
+     * Two feeds are the same channel only when they are in the same language. An untagged name is
+     * in the list's own language, Italian: most Italian lists tag nothing, so a reserve playlist
+     * that writes "Rai 1" still backs "IT| Rai 1". Treating untagged as "any language" let the
+     * UK "Sky Nature" (filed under "English") show up as a variant of the Italian one.
      */
     fun sameLanguage(first: String?, second: String?): Boolean =
-        first == null || second == null || first.equals(second, ignoreCase = true)
+        (first ?: HOME_LANGUAGE).equals(second ?: HOME_LANGUAGE, ignoreCase = true)
+
+    private const val HOME_LANGUAGE = "IT"
 
     /**
      * The group a provider files a channel under is often the only thing that says which feed it
