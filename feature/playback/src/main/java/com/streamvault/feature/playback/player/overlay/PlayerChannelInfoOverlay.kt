@@ -121,7 +121,10 @@ fun ChannelInfoOverlay(
     onTransientPanelVisibilityChanged: (Boolean) -> Unit = {},
     resolutionLabel: String? = null,
     showBackButton: Boolean = false,
-    onBackToMenu: () -> Unit = {}
+    onBackToMenu: () -> Unit = {},
+    // The same banner on a channel change: header and synopsis only, no actions, no focus and
+    // no back handling, so up/down keep zapping. OK opens the full one in the same place.
+    compact: Boolean = false
 ) {
     val appTimeFormat = LocalUiTimeFormat.current
     val timeFormat = remember(appTimeFormat) { appTimeFormat.createTimeFormat() }
@@ -160,6 +163,7 @@ fun ChannelInfoOverlay(
     }
 
     LaunchedEffect(expandedPanel) {
+        if (compact) return@LaunchedEffect
         onTransientPanelVisibilityChanged(expandedPanel != null)
         // Recording is opened from inside the More tray, whose entry disappears with it.
         if (expandedPanel == ChannelInfoPanel.RECORD) {
@@ -169,10 +173,10 @@ fun ChannelInfoOverlay(
     }
 
     androidx.compose.runtime.DisposableEffect(Unit) {
-        onDispose { onTransientPanelVisibilityChanged(false) }
+        onDispose { if (!compact) onTransientPanelVisibilityChanged(false) }
     }
 
-    BackHandler {
+    BackHandler(enabled = !compact) {
         if (expandedPanel != null) {
             expandedPanel = null
         } else {
@@ -180,7 +184,7 @@ fun ChannelInfoOverlay(
         }
     }
 
-    ChannelInfoOverlayFrame(showBackButton, onBackToMenu, onOverlayInteracted) {
+    ChannelInfoOverlayFrame(showBackButton && !compact, onBackToMenu, onOverlayInteracted) {
         PlayerOverlayPanel(
             modifier = Modifier
                 .fillMaxWidth()
@@ -392,338 +396,340 @@ fun ChannelInfoOverlay(
                 }
             }
 
-            if (showTimeshiftControls && expandedPanel == ChannelInfoPanel.LIVE_DVR) {
-                CompactTimeshiftTransport(
-                    timeshiftUiState = timeshiftUiState,
-                    isPlaying = isPlaying,
-                    onOverlayInteracted = onOverlayInteracted,
-                    onTogglePlayPause = onTogglePlayPause,
-                    onSeekBackward = onSeekBackward,
-                    onSeekForward = onSeekForward,
-                    onSeekToLiveEdge = onSeekToLiveEdge,
-                    firstFocusRequester = liveDvrPanelFocusRequester,
-                    ownerFocusRequester = focusRequester
-                )
-            }
-
-            val firstQuickAction = when {
-                showTimeshiftControls -> "dvr"
-                channelVariantCount > 1 -> "variants"
-                qualityOptionCount > 1 -> "format"
-                audioTrackCount > 1 -> "audio"
-                subtitleTrackCount > 0 -> "subs"
-                audioVideoSyncEnabled && !isCastConnected -> "av"
-                else -> "guide"
-            }
-            fun Modifier.initialFocus(key: String) = if (key == firstQuickAction) then(Modifier.focusRequester(focusRequester)) else this
-
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                contentPadding = PaddingValues(end = 8.dp)
-            ) {
-                // No play/pause here: on a live channel you are watching because you want to. The
-                // first button present takes the initial focus.
-                if (showTimeshiftControls) {
-                    item {
-                        QuickActionButton(
-                            icon = "DVR",
-                            label = stringResource(R.string.player_live_dvr_controls),
-                            onClick = { togglePanel(ChannelInfoPanel.LIVE_DVR) },
-                            onInteraction = { handleMainActionFocus(ChannelInfoPanel.LIVE_DVR) },
-                            colors = ClickableSurfaceDefaults.colors(
-                                containerColor = if (expandedPanel == ChannelInfoPanel.LIVE_DVR) {
-                                    Primary.copy(alpha = 0.30f)
-                                } else {
-                                    Primary.copy(alpha = 0.20f)
-                                },
-                                focusedContainerColor = Primary,
-                                pressedContainerColor = Primary.copy(alpha = 0.8f)
-                            ),
-                            modifier = Modifier
-                                .focusRequester(focusRequester)
-                                .focusProperties {
-                                    if (expandedPanel == ChannelInfoPanel.LIVE_DVR) {
-                                        up = liveDvrPanelFocusRequester
-                                    }
-                                }
-                        )
-                    }
-                }
-                if (channelVariantCount > 1) {
-                    item {
-                        QuickActionButton(
-                            icon = stringResource(R.string.player_action_variants),
-                            label = stringResource(R.string.player_variants_short),
-                            onClick = onOpenVariants,
-                            onInteraction = { handleMainActionFocus(null) },
-                            modifier = Modifier.initialFocus("variants")
-                        )
-                    }
-                }
-                if (qualityOptionCount > 1) {
-                    item {
-                        QuickActionButton(
-                            icon = stringResource(R.string.player_action_format),
-                            label = stringResource(R.string.player_format_short),
-                            onClick = onOpenStreamFormats,
-                            onInteraction = { handleMainActionFocus(null) },
-                            modifier = Modifier.initialFocus("format")
-                        )
-                    }
-                }
-                if (audioTrackCount > 1) {
-                    item {
-                        QuickActionButton(
-                            icon = stringResource(R.string.player_audio),
-                            label = stringResource(R.string.player_audio),
-                            onClick = onOpenAudioTracks,
-                            onInteraction = { handleMainActionFocus(null) },
-                            modifier = Modifier.initialFocus("audio")
-                        )
-                    }
-                }
-                // Only when the stream really carries subtitles; tracks with the same name are
-                // merged upstream, so one Italian teletext shows up once.
-                if (subtitleTrackCount > 0) {
-                    item {
-                        QuickActionButton(
-                            icon = "CC",
-                            label = stringResource(R.string.player_subs),
-                            onClick = {
-                                expandedPanel = null
-                                onOpenSubtitleTracks()
-                            },
-                            onInteraction = { handleMainActionFocus(null) },
-                            modifier = Modifier.initialFocus("subs")
-                        )
-                    }
-                }
-                if (audioVideoSyncEnabled && !isCastConnected) {
-                    item {
-                        QuickActionButton(
-                            icon = "A/V",
-                            label = stringResource(R.string.player_av_sync_short),
-                            onClick = {
-                                expandedPanel = null
-                                onOpenAudioVideoSync()
-                            },
-                            onInteraction = { handleMainActionFocus(null) },
-                            modifier = Modifier.initialFocus("av")
-                        )
-                    }
-                }
-                item {
-                    QuickActionButton(
-                        icon = stringResource(R.string.player_action_guide),
-                        label = stringResource(R.string.player_epg_short),
-                        onClick = {
-                            expandedPanel = null
-                            onDismiss()
-                            onOpenFullEpg()
-                        },
-                        onInteraction = { handleMainActionFocus(null) },
-                        modifier = Modifier.initialFocus("guide")
+            if (!compact) {
+                if (showTimeshiftControls && expandedPanel == ChannelInfoPanel.LIVE_DVR) {
+                    CompactTimeshiftTransport(
+                        timeshiftUiState = timeshiftUiState,
+                        isPlaying = isPlaying,
+                        onOverlayInteracted = onOverlayInteracted,
+                        onTogglePlayPause = onTogglePlayPause,
+                        onSeekBackward = onSeekBackward,
+                        onSeekForward = onSeekForward,
+                        onSeekToLiveEdge = onSeekToLiveEdge,
+                        firstFocusRequester = liveDvrPanelFocusRequester,
+                        ownerFocusRequester = focusRequester
                     )
                 }
-                if (!lastVisitedCategoryName.isNullOrBlank()) {
-                    item {
-                        QuickActionButton(
-                            icon = stringResource(R.string.player_action_group),
-                            label = lastVisitedCategoryName,
-                            onClick = {
-                                expandedPanel = null
-                                onOpenLastGroup()
-                            },
-                            onInteraction = { handleMainActionFocus(null) }
-                        )
-                    }
-                }
-                if (hasCatchUpOptions) {
-                    item {
-                        QuickActionButton(
-                            icon = "C-UP",
-                            label = stringResource(R.string.player_catchup_badge),
-                            onClick = { togglePanel(ChannelInfoPanel.CATCH_UP) },
-                            onInteraction = { handleMainActionFocus(ChannelInfoPanel.CATCH_UP) },
-                            colors = ClickableSurfaceDefaults.colors(
-                                containerColor = if (expandedPanel == ChannelInfoPanel.CATCH_UP) Primary.copy(alpha = 0.22f) else AppColors.SurfaceEmphasis,
-                                focusedContainerColor = Primary.copy(alpha = 0.85f)
-                            ),
-                            modifier = Modifier
-                                .focusRequester(catchUpButtonFocusRequester)
-                                .focusProperties {
-                                    if (expandedPanel == ChannelInfoPanel.CATCH_UP) {
-                                        up = catchUpPanelFocusRequester
-                                    }
-                                }
-                        )
-                    }
-                }
-                // Split, diagnostics, cast, PiP and aspect ratio live one level down: they are
-                // rarely used and they were pushing the everyday actions off the visible strip.
-                item {
-                    QuickActionButton(
-                        icon = stringResource(R.string.player_action_more),
-                        label = stringResource(R.string.player_more_short),
-                        onClick = { togglePanel(ChannelInfoPanel.MORE) },
-                        onInteraction = { if (expandedPanel != ChannelInfoPanel.RECORD) handleMainActionFocus(ChannelInfoPanel.MORE) else onOverlayInteracted() },
-                        colors = ClickableSurfaceDefaults.colors(
-                            containerColor = if (expandedPanel == ChannelInfoPanel.MORE) Primary.copy(alpha = 0.22f) else AppColors.SurfaceEmphasis,
-                            focusedContainerColor = Primary.copy(alpha = 0.85f)
-                        ),
-                        modifier = Modifier
-                            .focusRequester(moreButtonFocusRequester)
-                            .focusProperties {
-                                when (expandedPanel) {
-                                    ChannelInfoPanel.MORE -> up = morePanelFocusRequester
-                                    ChannelInfoPanel.RECORD -> up = recordPanelFocusRequester
-                                    else -> Unit
-                                }
-                            }
-                    )
-                }
-            }
 
-            when (expandedPanel) {
-                ChannelInfoPanel.RECORD -> {
-                    ChannelInfoActionMenuTray(
-                        title = stringResource(R.string.player_record_options),
-                        actions = buildList {
-                            if (currentRecordingStatus == RecordingStatus.RECORDING || currentRecordingStatus == RecordingStatus.SCHEDULED) {
-                                add(
-                                    ChannelInfoMenuEntry(
-                                        label = if (currentRecordingStatus == RecordingStatus.SCHEDULED) {
-                                            stringResource(R.string.player_cancel_scheduled_recording)
-                                        } else {
-                                            stringResource(R.string.player_stop_recording)
+                val firstQuickAction = when {
+                    showTimeshiftControls -> "dvr"
+                    channelVariantCount > 1 -> "variants"
+                    qualityOptionCount > 1 -> "format"
+                    audioTrackCount > 1 -> "audio"
+                    subtitleTrackCount > 0 -> "subs"
+                    audioVideoSyncEnabled && !isCastConnected -> "av"
+                    else -> "guide"
+                }
+                fun Modifier.initialFocus(key: String) = if (key == firstQuickAction) then(Modifier.focusRequester(focusRequester)) else this
+
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    contentPadding = PaddingValues(end = 8.dp)
+                ) {
+                    // No play/pause here: on a live channel you are watching because you want to. The
+                    // first button present takes the initial focus.
+                    if (showTimeshiftControls) {
+                        item {
+                            QuickActionButton(
+                                icon = "DVR",
+                                label = stringResource(R.string.player_live_dvr_controls),
+                                onClick = { togglePanel(ChannelInfoPanel.LIVE_DVR) },
+                                onInteraction = { handleMainActionFocus(ChannelInfoPanel.LIVE_DVR) },
+                                colors = ClickableSurfaceDefaults.colors(
+                                    containerColor = if (expandedPanel == ChannelInfoPanel.LIVE_DVR) {
+                                        Primary.copy(alpha = 0.30f)
+                                    } else {
+                                        Primary.copy(alpha = 0.20f)
+                                    },
+                                    focusedContainerColor = Primary,
+                                    pressedContainerColor = Primary.copy(alpha = 0.8f)
+                                ),
+                                modifier = Modifier
+                                    .focusRequester(focusRequester)
+                                    .focusProperties {
+                                        if (expandedPanel == ChannelInfoPanel.LIVE_DVR) {
+                                            up = liveDvrPanelFocusRequester
                                         }
-                                    ) {
-                                        expandedPanel = null
-                                        onStopRecording()
                                     }
-                                )
-                            } else {
-                                add(
-                                    ChannelInfoMenuEntry(stringResource(R.string.player_record_now)) {
-                                        expandedPanel = null
-                                        onStartRecording()
-                                    }
-                                )
-                            }
-                            add(ChannelInfoMenuEntry(stringResource(R.string.player_schedule_recording)) {
-                                expandedPanel = null
-                                onScheduleRecording()
-                            })
-                            add(ChannelInfoMenuEntry(stringResource(R.string.player_schedule_daily_recording)) {
-                                expandedPanel = null
-                                onScheduleDailyRecording()
-                            })
-                            add(ChannelInfoMenuEntry(stringResource(R.string.player_schedule_weekly_recording)) {
-                                expandedPanel = null
-                                onScheduleWeeklyRecording()
-                            })
-                        },
-                        onInteraction = onOverlayInteracted,
-                        firstActionFocusRequester = recordPanelFocusRequester,
-                        ownerFocusRequester = moreButtonFocusRequester
-                    )
-                }
-
-                ChannelInfoPanel.CATCH_UP -> {
-                    ChannelInfoActionMenuTray(
-                        title = stringResource(R.string.player_catchup_options),
-                        actions = buildList {
-                            if (canRestartProgram) {
-                                add(ChannelInfoMenuEntry(stringResource(R.string.player_restart)) {
+                            )
+                        }
+                    }
+                    if (channelVariantCount > 1) {
+                        item {
+                            QuickActionButton(
+                                icon = stringResource(R.string.player_action_variants),
+                                label = stringResource(R.string.player_variants_short),
+                                onClick = onOpenVariants,
+                                onInteraction = { handleMainActionFocus(null) },
+                                modifier = Modifier.initialFocus("variants")
+                            )
+                        }
+                    }
+                    if (qualityOptionCount > 1) {
+                        item {
+                            QuickActionButton(
+                                icon = stringResource(R.string.player_action_format),
+                                label = stringResource(R.string.player_format_short),
+                                onClick = onOpenStreamFormats,
+                                onInteraction = { handleMainActionFocus(null) },
+                                modifier = Modifier.initialFocus("format")
+                            )
+                        }
+                    }
+                    if (audioTrackCount > 1) {
+                        item {
+                            QuickActionButton(
+                                icon = stringResource(R.string.player_audio),
+                                label = stringResource(R.string.player_audio),
+                                onClick = onOpenAudioTracks,
+                                onInteraction = { handleMainActionFocus(null) },
+                                modifier = Modifier.initialFocus("audio")
+                            )
+                        }
+                    }
+                    // Only when the stream really carries subtitles; tracks with the same name are
+                    // merged upstream, so one Italian teletext shows up once.
+                    if (subtitleTrackCount > 0) {
+                        item {
+                            QuickActionButton(
+                                icon = "CC",
+                                label = stringResource(R.string.player_subs),
+                                onClick = {
                                     expandedPanel = null
-                                    onRestartProgram()
-                                    onDismiss()
-                                })
-                            }
-                            if (canBrowseArchive) {
-                                add(ChannelInfoMenuEntry(stringResource(R.string.player_browse_archive)) {
+                                    onOpenSubtitleTracks()
+                                },
+                                onInteraction = { handleMainActionFocus(null) },
+                                modifier = Modifier.initialFocus("subs")
+                            )
+                        }
+                    }
+                    if (audioVideoSyncEnabled && !isCastConnected) {
+                        item {
+                            QuickActionButton(
+                                icon = "A/V",
+                                label = stringResource(R.string.player_av_sync_short),
+                                onClick = {
                                     expandedPanel = null
-                                    onDismiss()
-                                    onOpenArchive()
-                                })
-                            }
-                            add(ChannelInfoMenuEntry(stringResource(R.string.player_browse_guide_catchup)) {
+                                    onOpenAudioVideoSync()
+                                },
+                                onInteraction = { handleMainActionFocus(null) },
+                                modifier = Modifier.initialFocus("av")
+                            )
+                        }
+                    }
+                    item {
+                        QuickActionButton(
+                            icon = stringResource(R.string.player_action_guide),
+                            label = stringResource(R.string.player_epg_short),
+                            onClick = {
                                 expandedPanel = null
                                 onDismiss()
                                 onOpenFullEpg()
-                            })
-                        },
-                        onInteraction = onOverlayInteracted,
-                        firstActionFocusRequester = catchUpPanelFocusRequester,
-                        ownerFocusRequester = catchUpButtonFocusRequester
-                    )
-                }
-
-                ChannelInfoPanel.MORE -> {
-                    ChannelInfoActionMenuTray(
-                        title = stringResource(R.string.player_more_options),
-                        // Mute and recording sit here too: the remote has its own mute key. Video
-                        // quality too, since most providers send a single rendition.
-                        actions = listOf(
-                            ChannelInfoMenuEntry(stringResource(R.string.player_record)) {
-                                expandedPanel = ChannelInfoPanel.RECORD
                             },
-                            ChannelInfoMenuEntry(
-                                if (isMuted) stringResource(R.string.player_unmute) else stringResource(R.string.player_mute)
-                            ) {
-                                expandedPanel = null
-                                onToggleMute()
-                            },
-                        ) + listOfNotNull(
-                            ChannelInfoMenuEntry(stringResource(R.string.player_video_quality)) {
-                                expandedPanel = null
-                                onOpenVideoTracks()
-                            }.takeIf { videoQualityCount > 0 },
-                            // With real tracks the subtitle button sits on the main row; here it is
-                            // only the way into live translation.
-                            ChannelInfoMenuEntry(stringResource(R.string.player_subs)) {
-                                expandedPanel = null
-                                onOpenSubtitleTracks()
-                            }.takeIf { subtitleTrackCount == 0 && liveTranslationAvailable },
-                        ) + listOf(
-                            ChannelInfoMenuEntry(stringResource(R.string.player_multiview_short)) {
-                                expandedPanel = null
-                                onDismiss()
-                                onOpenSplitScreen()
-                            },
-                            ChannelInfoMenuEntry(
-                                if (isCastConnected) {
-                                    stringResource(R.string.player_stop_casting)
-                                } else {
-                                    stringResource(R.string.player_cast)
+                            onInteraction = { handleMainActionFocus(null) },
+                            modifier = Modifier.initialFocus("guide")
+                        )
+                    }
+                    if (!lastVisitedCategoryName.isNullOrBlank()) {
+                        item {
+                            QuickActionButton(
+                                icon = stringResource(R.string.player_action_group),
+                                label = lastVisitedCategoryName,
+                                onClick = {
+                                    expandedPanel = null
+                                    onOpenLastGroup()
+                                },
+                                onInteraction = { handleMainActionFocus(null) }
+                            )
+                        }
+                    }
+                    if (hasCatchUpOptions) {
+                        item {
+                            QuickActionButton(
+                                icon = "C-UP",
+                                label = stringResource(R.string.player_catchup_badge),
+                                onClick = { togglePanel(ChannelInfoPanel.CATCH_UP) },
+                                onInteraction = { handleMainActionFocus(ChannelInfoPanel.CATCH_UP) },
+                                colors = ClickableSurfaceDefaults.colors(
+                                    containerColor = if (expandedPanel == ChannelInfoPanel.CATCH_UP) Primary.copy(alpha = 0.22f) else AppColors.SurfaceEmphasis,
+                                    focusedContainerColor = Primary.copy(alpha = 0.85f)
+                                ),
+                                modifier = Modifier
+                                    .focusRequester(catchUpButtonFocusRequester)
+                                    .focusProperties {
+                                        if (expandedPanel == ChannelInfoPanel.CATCH_UP) {
+                                            up = catchUpPanelFocusRequester
+                                        }
+                                    }
+                            )
+                        }
+                    }
+                    // Split, diagnostics, cast, PiP and aspect ratio live one level down: they are
+                    // rarely used and they were pushing the everyday actions off the visible strip.
+                    item {
+                        QuickActionButton(
+                            icon = stringResource(R.string.player_action_more),
+                            label = stringResource(R.string.player_more_short),
+                            onClick = { togglePanel(ChannelInfoPanel.MORE) },
+                            onInteraction = { if (expandedPanel != ChannelInfoPanel.RECORD) handleMainActionFocus(ChannelInfoPanel.MORE) else onOverlayInteracted() },
+                            colors = ClickableSurfaceDefaults.colors(
+                                containerColor = if (expandedPanel == ChannelInfoPanel.MORE) Primary.copy(alpha = 0.22f) else AppColors.SurfaceEmphasis,
+                                focusedContainerColor = Primary.copy(alpha = 0.85f)
+                            ),
+                            modifier = Modifier
+                                .focusRequester(moreButtonFocusRequester)
+                                .focusProperties {
+                                    when (expandedPanel) {
+                                        ChannelInfoPanel.MORE -> up = morePanelFocusRequester
+                                        ChannelInfoPanel.RECORD -> up = recordPanelFocusRequester
+                                        else -> Unit
+                                    }
                                 }
-                            ) {
-                                expandedPanel = null
-                                if (isCastConnected) onStopCasting() else onCast()
-                            },
-                            ChannelInfoMenuEntry(stringResource(R.string.player_pip_short)) {
-                                expandedPanel = null
-                                onEnterPictureInPicture()
-                            },
-                            ChannelInfoMenuEntry(currentAspectRatio) {
-                                expandedPanel = null
-                                onToggleAspectRatio()
-                            },
-                            ChannelInfoMenuEntry(stringResource(R.string.player_stats)) {
-                                expandedPanel = null
-                                onToggleDiagnostics()
-                            }
-                        ),
-                        onInteraction = onOverlayInteracted,
-                        firstActionFocusRequester = morePanelFocusRequester,
-                        ownerFocusRequester = moreButtonFocusRequester
-                    )
+                        )
+                    }
                 }
 
-                ChannelInfoPanel.LIVE_DVR,
-                null -> Unit
+                when (expandedPanel) {
+                    ChannelInfoPanel.RECORD -> {
+                        ChannelInfoActionMenuTray(
+                            title = stringResource(R.string.player_record_options),
+                            actions = buildList {
+                                if (currentRecordingStatus == RecordingStatus.RECORDING || currentRecordingStatus == RecordingStatus.SCHEDULED) {
+                                    add(
+                                        ChannelInfoMenuEntry(
+                                            label = if (currentRecordingStatus == RecordingStatus.SCHEDULED) {
+                                                stringResource(R.string.player_cancel_scheduled_recording)
+                                            } else {
+                                                stringResource(R.string.player_stop_recording)
+                                            }
+                                        ) {
+                                            expandedPanel = null
+                                            onStopRecording()
+                                        }
+                                    )
+                                } else {
+                                    add(
+                                        ChannelInfoMenuEntry(stringResource(R.string.player_record_now)) {
+                                            expandedPanel = null
+                                            onStartRecording()
+                                        }
+                                    )
+                                }
+                                add(ChannelInfoMenuEntry(stringResource(R.string.player_schedule_recording)) {
+                                    expandedPanel = null
+                                    onScheduleRecording()
+                                })
+                                add(ChannelInfoMenuEntry(stringResource(R.string.player_schedule_daily_recording)) {
+                                    expandedPanel = null
+                                    onScheduleDailyRecording()
+                                })
+                                add(ChannelInfoMenuEntry(stringResource(R.string.player_schedule_weekly_recording)) {
+                                    expandedPanel = null
+                                    onScheduleWeeklyRecording()
+                                })
+                            },
+                            onInteraction = onOverlayInteracted,
+                            firstActionFocusRequester = recordPanelFocusRequester,
+                            ownerFocusRequester = moreButtonFocusRequester
+                        )
+                    }
+
+                    ChannelInfoPanel.CATCH_UP -> {
+                        ChannelInfoActionMenuTray(
+                            title = stringResource(R.string.player_catchup_options),
+                            actions = buildList {
+                                if (canRestartProgram) {
+                                    add(ChannelInfoMenuEntry(stringResource(R.string.player_restart)) {
+                                        expandedPanel = null
+                                        onRestartProgram()
+                                        onDismiss()
+                                    })
+                                }
+                                if (canBrowseArchive) {
+                                    add(ChannelInfoMenuEntry(stringResource(R.string.player_browse_archive)) {
+                                        expandedPanel = null
+                                        onDismiss()
+                                        onOpenArchive()
+                                    })
+                                }
+                                add(ChannelInfoMenuEntry(stringResource(R.string.player_browse_guide_catchup)) {
+                                    expandedPanel = null
+                                    onDismiss()
+                                    onOpenFullEpg()
+                                })
+                            },
+                            onInteraction = onOverlayInteracted,
+                            firstActionFocusRequester = catchUpPanelFocusRequester,
+                            ownerFocusRequester = catchUpButtonFocusRequester
+                        )
+                    }
+
+                    ChannelInfoPanel.MORE -> {
+                        ChannelInfoActionMenuTray(
+                            title = stringResource(R.string.player_more_options),
+                            // Mute and recording sit here too: the remote has its own mute key. Video
+                            // quality too, since most providers send a single rendition.
+                            actions = listOf(
+                                ChannelInfoMenuEntry(stringResource(R.string.player_record)) {
+                                    expandedPanel = ChannelInfoPanel.RECORD
+                                },
+                                ChannelInfoMenuEntry(
+                                    if (isMuted) stringResource(R.string.player_unmute) else stringResource(R.string.player_mute)
+                                ) {
+                                    expandedPanel = null
+                                    onToggleMute()
+                                },
+                            ) + listOfNotNull(
+                                ChannelInfoMenuEntry(stringResource(R.string.player_video_quality)) {
+                                    expandedPanel = null
+                                    onOpenVideoTracks()
+                                }.takeIf { videoQualityCount > 0 },
+                                // With real tracks the subtitle button sits on the main row; here it is
+                                // only the way into live translation.
+                                ChannelInfoMenuEntry(stringResource(R.string.player_subs)) {
+                                    expandedPanel = null
+                                    onOpenSubtitleTracks()
+                                }.takeIf { subtitleTrackCount == 0 && liveTranslationAvailable },
+                            ) + listOf(
+                                ChannelInfoMenuEntry(stringResource(R.string.player_multiview_short)) {
+                                    expandedPanel = null
+                                    onDismiss()
+                                    onOpenSplitScreen()
+                                },
+                                ChannelInfoMenuEntry(
+                                    if (isCastConnected) {
+                                        stringResource(R.string.player_stop_casting)
+                                    } else {
+                                        stringResource(R.string.player_cast)
+                                    }
+                                ) {
+                                    expandedPanel = null
+                                    if (isCastConnected) onStopCasting() else onCast()
+                                },
+                                ChannelInfoMenuEntry(stringResource(R.string.player_pip_short)) {
+                                    expandedPanel = null
+                                    onEnterPictureInPicture()
+                                },
+                                ChannelInfoMenuEntry(currentAspectRatio) {
+                                    expandedPanel = null
+                                    onToggleAspectRatio()
+                                },
+                                ChannelInfoMenuEntry(stringResource(R.string.player_stats)) {
+                                    expandedPanel = null
+                                    onToggleDiagnostics()
+                                }
+                            ),
+                            onInteraction = onOverlayInteracted,
+                            firstActionFocusRequester = morePanelFocusRequester,
+                            ownerFocusRequester = moreButtonFocusRequester
+                        )
+                    }
+
+                    ChannelInfoPanel.LIVE_DVR,
+                    null -> Unit
+                }
             }
         }
     }

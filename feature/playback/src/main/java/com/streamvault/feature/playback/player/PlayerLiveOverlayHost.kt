@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.streamvault.feature.playback.player.overlay.PlayerZapOverlay
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -165,27 +164,14 @@ internal fun BoxScope.PlayerLiveOverlayHost(
         )
     }
 
-    // The decoder-style plate on a channel change: number, name, now and next, gone by itself.
-    // The full control bar stays one OK press away. The side lists already show the playing
-    // channel highlighted, so the plate would only repeat it on top of them.
+    // One banner: compact on a channel change (header and synopsis, gone by itself, keys keep
+    // zapping), full with the actions on OK. Hidden behind the side lists, which already show
+    // the playing channel highlighted.
     val showZapOverlay by viewModel.showZapOverlay.collectAsStateWithLifecycle()
-    PlayerZapOverlay(
-        visible = showZapOverlay && !showChannelInfoOverlay && !showChannelListOverlay && !showCategoryListOverlay,
-        displayChannelNumber = displayChannelNumber,
-        channelName = currentChannel?.name,
-        programTitle = currentProgram?.title,
-        nextProgramTitle = nextProgram?.title,
-        sourceLabel = currentChannel?.takeIf { channel ->
-            channel.variants.map { it.providerId }.distinct().size > 1
-        }?.currentVariant?.sourceName,
-        programStartTime = currentProgram?.startTime ?: 0L,
-        programEndTime = currentProgram?.endTime ?: 0L,
-        logoUrl = currentChannel?.logoUrl,
-        modifier = Modifier.align(if (isRtl) Alignment.BottomEnd else Alignment.BottomStart)
-    )
-
+    val showCompactBanner = showZapOverlay && !showChannelInfoOverlay &&
+        !showChannelListOverlay && !showCategoryListOverlay
     AnimatedVisibility(
-        visible = showChannelInfoOverlay,
+        visible = showChannelInfoOverlay || showCompactBanner,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = Modifier
@@ -259,7 +245,8 @@ internal fun BoxScope.PlayerLiveOverlayHost(
             onTransientPanelVisibilityChanged = onTransientPanelVisibilityChanged,
             resolutionLabel = buildChannelInfoResolutionLabel(videoFormat),
             showBackButton = showBackButton,
-            onBackToMenu = onBackToMenu
+            onBackToMenu = onBackToMenu,
+            compact = !showChannelInfoOverlay
         )
     }
 }
