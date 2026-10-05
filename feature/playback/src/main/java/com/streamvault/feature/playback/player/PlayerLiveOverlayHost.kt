@@ -166,10 +166,11 @@ internal fun BoxScope.PlayerLiveOverlayHost(
     }
 
     // The decoder-style plate on a channel change: number, name, now and next, gone by itself.
-    // The full control bar stays one OK press away.
+    // The full control bar stays one OK press away. The side lists already show the playing
+    // channel highlighted, so the plate would only repeat it on top of them.
     val showZapOverlay by viewModel.showZapOverlay.collectAsStateWithLifecycle()
     PlayerZapOverlay(
-        visible = showZapOverlay && !showChannelInfoOverlay,
+        visible = showZapOverlay && !showChannelInfoOverlay && !showChannelListOverlay && !showCategoryListOverlay,
         displayChannelNumber = displayChannelNumber,
         channelName = currentChannel?.name,
         programTitle = currentProgram?.title,
