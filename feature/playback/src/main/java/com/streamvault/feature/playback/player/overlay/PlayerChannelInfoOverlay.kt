@@ -339,6 +339,17 @@ fun ChannelInfoOverlay(
                                     )
                                 }
                             }
+                            // Like a TV's info banner: the synopsis, cut at two lines so the
+                            // banner keeps its height on long EPG descriptions.
+                            if (currentProgram.description.isNotBlank()) {
+                                Text(
+                                    text = currentProgram.description.trim(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = AppColors.TextSecondary,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                             if (nextProgram != null) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
