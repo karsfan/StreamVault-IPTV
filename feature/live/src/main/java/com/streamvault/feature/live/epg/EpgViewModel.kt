@@ -688,10 +688,8 @@ class EpgViewModel @Inject constructor(
             categoryId != ChannelRepository.ALL_CHANNELS_ID &&
             (categoryId == VirtualCategoryIds.FAVORITES || categoryId < 0L)
         ) return emptyList()
-        val withoutErrors = channelRepository.getChannelsWithoutErrorsPageOffset(providerId, categoryId, MAX_CHANNELS, offset)
-        val raw = withoutErrors.ifEmpty {
-            channelRepository.getChannelsByCategoryPageOffset(providerId, categoryId, MAX_CHANNELS, offset)
-        }
+        // Every channel, failed or not: see loadPreferredGuideChannelsPage.
+        val raw = channelRepository.getChannelsByCategoryPageOffset(providerId, categoryId, MAX_CHANNELS, offset)
         val filtered = if (hiddenCategoryIds.isEmpty()) raw else raw.filterNot { it.categoryId in hiddenCategoryIds }
         return if (favoritesOnly) filtered.filter { it.id in favoriteChannelIds } else filtered
     }
@@ -1649,13 +1647,14 @@ class EpgViewModel @Inject constructor(
                 }
             }
     } else {
+        // The guide used to list only channels whose error count was zero. One failed start,
+        // even a Wi-Fi drop or the provider's single connection being taken, hid a channel until
+        // it played again: one morning the guide opened on six channels, without Canale 5,
+        // Italia 1 or La7. A guide lists the line-up; a failing stream is the player's problem.
         combine(
             channelRepository.getChannelsByCategoryPage(providerId, categoryId, MAX_CHANNELS),
-            channelRepository.getChannelsWithoutErrorsPage(providerId, categoryId, MAX_CHANNELS),
             favoriteRepository.getFavorites(providerId, ContentType.LIVE)
-        ) { channelsByNumber, healthyChannels, _ ->
-            healthyChannels.ifEmpty { channelsByNumber }
-        }
+        ) { channelsByNumber, _ -> channelsByNumber }
     }
 
     private fun combinedProviderIdsFlow(profileId: Long): kotlinx.coroutines.flow.Flow<List<Long>> = kotlinx.coroutines.flow.flow {
