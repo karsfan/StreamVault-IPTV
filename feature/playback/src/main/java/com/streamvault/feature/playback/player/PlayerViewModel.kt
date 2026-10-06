@@ -1493,8 +1493,15 @@ class PlayerViewModel @Inject constructor(
             }
         }
         
-        // Show context info on entry for both Live and VOD
-        openChannelInfoOverlay()
+        // Context info on entry. Live gets the compact banner, the same one a channel change shows:
+        // the full one with its actions took the keys on arrival, so up/down did nothing until it
+        // timed out. OK still opens the full one.
+        if (currentContentType == ContentType.LIVE) {
+            showZapOverlayFlow.value = true
+            hideZapOverlayAfterDelay()
+        } else {
+            openChannelInfoOverlay()
+        }
 
         if (providerId > 0) {
             playbackSessionScope(requestVersion)?.launch {
