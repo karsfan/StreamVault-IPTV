@@ -10,6 +10,8 @@
 <meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#131316" media="(prefers-color-scheme: dark)">
 <title>Telecomando Tivù</title>
+<link rel="apple-touch-icon" href="{{BASE}}/icon.png">
+<link rel="icon" type="image/png" href="{{BASE}}/icon.png">
 <style>
 /* Same keys as the LifeOS dashboard: lit from the top, a bright top edge, a tight shadow;
    pressing sinks 1px and pulls the shadow inside, the way a real key travels. */
@@ -170,7 +172,23 @@ details[open] summary { margin-bottom: 12px; }
     status.className = 'status ' + (state === 'ok' ? 'ok' : 'off');
     status.textContent = state === 'ok' ? 'collegato' : state === 'off' ? 'apri Tivù sulla TV' : 'TV non raggiungibile';
   };
-  const buzz = () => { if (navigator.vibrate) navigator.vibrate(8); };
+  // Haptics: Android has navigator.vibrate; iOS Safari does not, but since iOS 18 toggling a
+  // native switch control taps the Taptic Engine, which is what the iOS haptics libraries do.
+  const hapticSwitch = (() => {
+    const label = document.createElement('label');
+    label.setAttribute('aria-hidden', 'true');
+    label.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.setAttribute('switch', '');
+    label.appendChild(input);
+    document.body.appendChild(label);
+    return label;
+  })();
+  const buzz = () => {
+    if (navigator.vibrate) { navigator.vibrate(10); return; }
+    hapticSwitch.click();
+  };
 
   let volumeTimer = null;
   const stopVolume = () => { clearTimeout(volumeTimer); clearInterval(volumeTimer); volumeTimer = null; };

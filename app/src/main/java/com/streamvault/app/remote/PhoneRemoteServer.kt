@@ -141,6 +141,7 @@ class PhoneRemoteServer @Inject constructor(
         val out = client.getOutputStream()
         when (segments.getOrNull(1)) {
             null -> respond(out, 200, "text/html; charset=utf-8", page())
+            "icon.png" -> respondBytes(out, "image/png", context.assets.open(ICON_ASSET).use { it.readBytes() })
             "ping" -> respond(out, if (visibleActivity() != null) 204 else 409)
             "down" -> respond(out, keyCode(query["k"])?.let { press(it) } ?: 400)
             "up" -> {
@@ -214,6 +215,16 @@ class PhoneRemoteServer @Inject constructor(
 
     private fun page(): String =
         context.assets.open(PAGE_ASSET).bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+            .replace("{{BASE}}", "/$token")
+
+    private fun respondBytes(out: OutputStream, contentType: String, bytes: ByteArray) {
+        out.write(
+            ("HTTP/1.1 200 OK\r\nContent-Type: $contentType\r\nContent-Length: ${bytes.size}\r\n" +
+                "Cache-Control: max-age=86400\r\nConnection: close\r\n\r\n").toByteArray(StandardCharsets.UTF_8)
+        )
+        out.write(bytes)
+        out.flush()
+    }
 
     private fun respond(out: OutputStream, status: Int, contentType: String = "text/plain", body: String = "") {
         val bytes = body.toByteArray(StandardCharsets.UTF_8)
@@ -262,6 +273,7 @@ class PhoneRemoteServer @Inject constructor(
         private const val KEY_ENABLED = "enabled"
         private const val KEY_TOKEN = "token"
         private const val PAGE_ASSET = "phone-remote.html"
+        private const val ICON_ASSET = "phone-remote-icon.png"
         const val PORT = 8765
         private const val BACKLOG = 16
         private const val TOKEN_BYTES = 4
