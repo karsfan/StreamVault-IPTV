@@ -362,6 +362,9 @@ public fun LazyListScope.settingsPlaybackSection(
                     onClick = onCloseApp,
                     modifier = if (targetItemId == "playback.close_app") targetFocusModifier else Modifier,
                 )
+                PhoneRemoteSettingsRow(
+                    modifier = if (targetItemId == "playback.phone_remote") targetFocusModifier else Modifier,
+                )
             }
             if (page == null || page == SettingsPage.NETWORK) {
                 SwitchSettingsRow(

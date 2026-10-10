@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tivù">
+<meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131316" media="(prefers-color-scheme: dark)">
+<title>Telecomando Tivù</title>
+<style>
+/* Same keys as the LifeOS dashboard: lit from the top, a bright top edge, a tight shadow;
+   pressing sinks 1px and pulls the shadow inside, the way a real key travels. */
+:root {
+  --paper: #fcfcfb; --ink: #1a1a1d; --ink-soft: #55555e; --ink-faint: #8e8e97; --line: #e4e4e0;
+  --accent: #2f6fde; --warn: #b5762e;
+  --key-top: #ffffff; --key-bottom: #f3f3f6; --key-edge: #dfdfe5;
+  --key-light: inset 0 1px 0 0 rgba(255,255,255,.9), 0 1px 1px 0 rgba(16,24,40,.05), 0 2px 3px -1px rgba(16,24,40,.07);
+  --key-light-active: inset 0 2px 4px 0 rgba(16,24,40,.10), 0 1px 1px 0 rgba(16,24,40,.05);
+  --key: inset 0 1px 0 0 rgba(255,255,255,.25), inset 0 -1px 0 0 rgba(0,0,0,.16), 0 1px 1px 0 rgba(16,24,40,.10), 0 2px 3px -1px rgba(16,24,40,.12);
+  --key-active: inset 0 2px 4px 0 rgba(0,0,0,.24), inset 0 1px 0 0 rgba(255,255,255,.05), 0 1px 1px 0 rgba(16,24,40,.08);
+  --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #131316; --ink: #e8e8ea; --ink-soft: #a6a6b0; --ink-faint: #6e6e79; --line: #2b2b31;
+    --accent: #5b9cff; --warn: #d9a05b;
+    --key-top: #2e2e33; --key-bottom: #232327; --key-edge: #3b3b42;
+    --key-light: var(--key); --key-light-active: var(--key-active);
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+body {
+  min-height: 100dvh; display: flex; justify-content: center;
+  padding: max(14px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
+  -webkit-user-select: none; user-select: none; touch-action: manipulation; overscroll-behavior: none;
+}
+main { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 18px; }
+header { display: flex; align-items: center; justify-content: space-between; }
+h1 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+.status { font-family: var(--mono); font-size: .6875rem; color: var(--ink-faint); display: flex; align-items: center; gap: 6px; }
+.status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ink-faint); }
+.status.ok::before { background: #17955a; }
+.status.off { color: var(--warn); }
+.status.off::before { background: var(--warn); }
+
+button {
+  font: inherit; color: var(--ink); cursor: pointer;
+  background: linear-gradient(180deg, var(--key-top), var(--key-bottom));
+  border: 1px solid var(--key-edge); box-shadow: var(--key-light);
+  border-radius: 14px; height: 54px; font-size: .95rem; font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: transform .1s ease-out, box-shadow .1s ease-out, filter .1s ease-out;
+}
+button.down { transform: translateY(1px); box-shadow: var(--key-light-active); }
+button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+button small { font-family: var(--mono); font-size: .6875rem; color: var(--ink-faint); letter-spacing: .02em; }
+
+/* Coloured keys: the four programme keys and OK. */
+button.c {
+  --k: var(--accent); color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.18);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--k) 86%, #fff), color-mix(in srgb, var(--k) 90%, #000));
+  border: 1px solid color-mix(in srgb, var(--k) 72%, #000); box-shadow: var(--key);
+}
+button.c.down { filter: brightness(.95); box-shadow: var(--key-active); }
+button.red { --k: #d64545; } button.green { --k: #17955a; } button.yellow { --k: #d9a400; } button.blue { --k: #2f6fde; }
+
+.row { display: grid; gap: 10px; }
+.r4 { grid-template-columns: repeat(4, 1fr); }
+.r3 { grid-template-columns: repeat(3, 1fr); }
+
+/* D-pad: one disc, four arcs and OK in the middle. */
+.pad { position: relative; width: min(78vw, 300px); aspect-ratio: 1; margin: 4px auto; }
+.pad button { position: absolute; border-radius: 18px; }
+.pad .up, .pad .down-k { left: 33%; width: 34%; height: 30%; }
+.pad .up { top: 0; } .pad .down-k { bottom: 0; }
+.pad .left, .pad .right { top: 33%; height: 34%; width: 30%; }
+.pad .left { left: 0; } .pad .right { right: 0; }
+.pad .ok { left: 33%; top: 33%; width: 34%; height: 34%; border-radius: 50%; font-weight: 600; font-size: 1rem; }
+
+.rockers { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: stretch; }
+.rocker { display: grid; grid-template-rows: 1fr auto 1fr; gap: 6px; }
+.middle .spacer { font-family: var(--mono); font-size: .6875rem; }
+.rocker span { text-align: center; font-family: var(--mono); font-size: .6875rem; color: var(--ink-faint); letter-spacing: .04em; }
+.middle { display: grid; grid-template-rows: 1fr auto 1fr; gap: 6px; }
+
+details { border-top: 1px solid var(--line); padding-top: 12px; }
+summary { list-style: none; font-family: var(--mono); font-size: .6875rem; color: var(--ink-faint); text-align: center; cursor: pointer; }
+summary::-webkit-details-marker { display: none; }
+details[open] summary { margin-bottom: 12px; }
+.digits button { font-size: 1.15rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Tivù</h1>
+    <div class="status" id="status">collegamento…</div>
+  </header>
+
+  <div class="row r4">
+    <button data-k="back" aria-label="Indietro"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+    <button data-k="guide">Guida</button>
+    <button data-k="info">Info</button>
+    <button data-k="menu" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+
+  <div class="pad">
+    <button class="up" data-k="up" aria-label="Su"><svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button>
+    <button class="left" data-k="left" aria-label="Sinistra"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+    <button class="ok c" data-k="ok">OK</button>
+    <button class="right" data-k="right" aria-label="Destra"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+    <button class="down-k" data-k="down" aria-label="Giù"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+
+  <div class="rockers">
+    <div class="rocker">
+      <button data-v="up" aria-label="Volume su"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      <span>VOL</span>
+      <button data-v="down" aria-label="Volume giù"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+    </div>
+    <div class="middle">
+      <button data-v="mute" aria-label="Muto"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg></button>
+      <span class="spacer" aria-hidden="true">&nbsp;</span>
+      <button data-k="play" aria-label="Pausa"><svg viewBox="0 0 24 24"><path d="M7 5v14M17 5v14"/></svg></button>
+    </div>
+    <div class="rocker">
+      <button data-k="chup" aria-label="Canale su"><svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button>
+      <span>CH</span>
+      <button data-k="chdown" aria-label="Canale giù"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
+  </div>
+
+  <div class="row r4">
+    <button class="c red" data-k="red" aria-label="Rosso"></button>
+    <button class="c green" data-k="green" aria-label="Verde"></button>
+    <button class="c yellow" data-k="yellow" aria-label="Giallo"></button>
+    <button class="c blue" data-k="blue" aria-label="Blu"></button>
+  </div>
+
+  <details id="digits">
+    <summary>numeri</summary>
+    <div class="row r3 digits">
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+      <button data-k="last"><small>ULTIMO</small></button><button data-k="0">0</button><button data-k="ok"><small>OK</small></button>
+    </div>
+  </details>
+</main>
+<script>
+(() => {
+  const base = location.pathname.replace(/\/+$/, '');
+  const status = document.getElementById('status');
+  // One request at a time, in order: a key's "up" must never overtake its "down".
+  let queue = Promise.resolve();
+  const send = (path) => {
+    queue = queue.then(() => fetch(base + path, { method: 'POST', cache: 'no-store' })
+      .then((r) => show(r.status === 409 ? 'off' : 'ok'))
+      .catch(() => show('lost')));
+    return queue;
+  };
+  const show = (state) => {
+    status.className = 'status ' + (state === 'ok' ? 'ok' : 'off');
+    status.textContent = state === 'ok' ? 'collegato' : state === 'off' ? 'apri Tivù sulla TV' : 'TV non raggiungibile';
+  };
+  const buzz = () => { if (navigator.vibrate) navigator.vibrate(8); };
+
+  let volumeTimer = null;
+  const stopVolume = () => { clearTimeout(volumeTimer); clearInterval(volumeTimer); volumeTimer = null; };
+
+  document.querySelectorAll('button').forEach((b) => {
+    let held = false;
+    const press = (e) => {
+      e.preventDefault();
+      if (held) return;
+      held = true;
+      b.classList.add('down');
+      buzz();
+      if (b.dataset.k) {
+        send('/down?k=' + b.dataset.k);
+      } else if (b.dataset.v) {
+        send('/vol?d=' + b.dataset.v);
+        // Volume is not a key on the TV side, so holding repeats it from here.
+        if (b.dataset.v !== 'mute') {
+          volumeTimer = setTimeout(() => {
+            volumeTimer = setInterval(() => send('/vol?d=' + b.dataset.v), 160);
+          }, 420);
+        }
+      }
+    };
+    const release = () => {
+      if (!held) return;
+      held = false;
+      b.classList.remove('down');
+      if (b.dataset.k) send('/up');
+      stopVolume();
+    };
+    b.addEventListener('pointerdown', press);
+    b.addEventListener('pointerup', release);
+    b.addEventListener('pointercancel', release);
+    b.addEventListener('pointerleave', release);
+    b.addEventListener('contextmenu', (e) => e.preventDefault());
+  });
+
+  const ping = () => fetch(base + '/ping', { cache: 'no-store' })
+    .then((r) => show(r.status === 409 ? 'off' : 'ok'))
+    .catch(() => show('lost'));
+  ping();
+  setInterval(() => { if (!document.hidden) ping(); }, 5000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) ping(); });
+})();
+</script>
+</body>
+</html>
