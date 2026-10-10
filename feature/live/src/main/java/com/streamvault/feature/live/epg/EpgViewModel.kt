@@ -74,6 +74,7 @@ import com.streamvault.player.PlaybackState
 import com.streamvault.player.PlayerEngine
 import com.streamvault.feature.live.presentation.epg.guidePrimeTimeAnchor
 import com.streamvault.feature.live.presentation.epg.jumpGuideAnchorToDay
+import com.streamvault.feature.live.presentation.epg.guideAnchorOnReturn
 import com.streamvault.feature.live.presentation.epg.shiftGuideAnchorByDays
 import com.streamvault.feature.live.presentation.epg.GuideChannelMode
 import com.streamvault.feature.live.presentation.epg.GuideDensity
@@ -917,6 +918,13 @@ class EpgViewModel @Inject constructor(
         }
     }
 
+    /** The view model can outlive hours in the back stack: a guide reopened later starts at now. */
+    fun followClockIfStale() {
+        val now = System.currentTimeMillis()
+        val anchor = guideAnchorOnReturn(guideAnchorTime.value, now, HALF_HOUR_SHIFT_MS)
+        if (anchor != guideAnchorTime.value) guideAnchorTime.value = anchor
+    }
+
     fun jumpToNow() {
         updateGuideAnchorTime(System.currentTimeMillis())
     }
@@ -1005,7 +1013,7 @@ class EpgViewModel @Inject constructor(
             selectedCategoryId.value = requested
         }
         anchorTime?.takeIf { it > 0L }?.let { requested ->
-            guideAnchorTime.value = requested
+            guideAnchorTime.value = guideAnchorOnReturn(requested, System.currentTimeMillis(), HALF_HOUR_SHIFT_MS)
         }
         favoritesOnly?.let { requested ->
             showFavoritesOnly.value = requested

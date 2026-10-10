@@ -174,6 +174,7 @@ fun LiveEpgScreen(
     val overrideUiState by viewModel.overrideUiState.collectAsStateWithLifecycle()
     val programReminderUiState by viewModel.programReminderUiState.collectAsStateWithLifecycle()
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        viewModel.followClockIfStale()
         viewModel.reconcileProgramReminders()
     }
     var selectedProgram by remember { mutableStateOf<Pair<Channel, Program>?>(null) }

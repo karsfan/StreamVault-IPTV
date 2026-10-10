@@ -55,3 +55,11 @@ fun dayRelativeOffset(
     val day = Instant.ofEpochMilli(dayStartMillis).atZone(zoneId).toLocalDate()
     return day.toEpochDay() - today.toEpochDay()
 }
+
+/**
+ * The anchor the guide should show when it becomes visible again. A future anchor was chosen
+ * on purpose (tonight, tomorrow) and is kept; one that has already slipped into the past is
+ * just the moment the guide was last left, possibly hours ago, so it follows the clock.
+ */
+fun guideAnchorOnReturn(anchorTimeMillis: Long, nowMillis: Long, staleAfterMillis: Long): Long =
+    if (anchorTimeMillis < nowMillis - staleAfterMillis) nowMillis else anchorTimeMillis
