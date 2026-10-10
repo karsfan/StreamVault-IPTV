@@ -26,6 +26,11 @@ class BorrowedMainEngine private constructor(
         if (isCurrent(this)) main.stop()
     }
 
+    // Same for the pane's view teardown once the player owns the engine again.
+    override fun clearRenderBinding() {
+        if (isCurrent(this)) main.clearRenderBinding()
+    }
+
     companion object {
         @Volatile
         private var current: BorrowedMainEngine? = null

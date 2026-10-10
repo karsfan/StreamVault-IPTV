@@ -177,7 +177,8 @@ details[open] summary { margin-bottom: 12px; }
   const hapticSwitch = (() => {
     const label = document.createElement('label');
     label.setAttribute('aria-hidden', 'true');
-    label.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none';
+    // Kept inside the viewport (WebKit may skip controls laid out off screen), just invisible.
+    label.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;overflow:hidden;pointer-events:none';
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.setAttribute('switch', '');
@@ -185,10 +186,10 @@ details[open] summary { margin-bottom: 12px; }
     document.body.appendChild(label);
     return label;
   })();
-  const buzz = () => {
-    if (navigator.vibrate) { navigator.vibrate(10); return; }
-    hapticSwitch.click();
-  };
+  // Android vibrates on touch down. iOS only lets the switch fire from a user activation, and
+  // for touch WebKit grants that on the finger lift (pointerup), not on pointerdown.
+  const buzzDown = () => { if (navigator.vibrate) navigator.vibrate(10); };
+  const buzzUp = () => { if (!navigator.vibrate) hapticSwitch.click(); };
 
   let volumeTimer = null;
   const stopVolume = () => { clearTimeout(volumeTimer); clearInterval(volumeTimer); volumeTimer = null; };
@@ -200,7 +201,7 @@ details[open] summary { margin-bottom: 12px; }
       if (held) return;
       held = true;
       b.classList.add('down');
-      buzz();
+      buzzDown();
       if (b.dataset.k) {
         send('/down?k=' + b.dataset.k);
       } else if (b.dataset.v) {
@@ -213,9 +214,10 @@ details[open] summary { margin-bottom: 12px; }
         }
       }
     };
-    const release = () => {
+    const release = (e) => {
       if (!held) return;
       held = false;
+      if (e && e.type === 'pointerup') buzzUp();
       b.classList.remove('down');
       if (b.dataset.k) send('/up');
       stopVolume();

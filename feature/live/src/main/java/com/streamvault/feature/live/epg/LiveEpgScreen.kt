@@ -184,6 +184,8 @@ fun LiveEpgScreen(
     var showCategoryPicker by rememberSaveable { mutableStateOf(false) }
     var showGuideOptions by rememberSaveable { mutableStateOf(false) }
     var showSearchOverlay by rememberSaveable { mutableStateOf(false) }
+    // The channel last opened from here: coming back, the grid lands on it instead of the top.
+    var lastPlayedChannelId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showPinDialog by rememberSaveable { mutableStateOf(false) }
     var pinError by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingLockedAction by remember { mutableStateOf<LockedGuideAction?>(null) }
@@ -221,6 +223,7 @@ fun LiveEpgScreen(
             is LockedGuideAction.SelectCategory -> viewModel.selectCategory(action.category.id)
             is LockedGuideAction.OpenProgram -> selectedProgram = action.channel to action.program
             is LockedGuideAction.PlayChannel -> {
+                lastPlayedChannelId = action.channel.id
                 viewModel.handoffOrClearForFullscreen(action.channel)
                 onPlayChannel(
                     action.channel,
@@ -418,6 +421,7 @@ fun LiveEpgScreen(
             isRefreshing = uiState.isRefreshing,
             previewPlayerEngine = uiState.previewPlayerEngine,
             isPreviewLoading = uiState.isPreviewLoading,
+            initialFocusedChannelId = lastPlayedChannelId,
             focusedChannel = focusedChannel,
             focusedProgram = focusedProgram,
             labels = LiveGuideContentLabels(
@@ -449,6 +453,7 @@ fun LiveEpgScreen(
                 } else if (!uiState.livePreviewEnabled || uiState.previewChannelId == channel.id) {
                     // Outside PRO mode the first click plays: previewing opens a second
                     // connection next to the one about to go fullscreen.
+                    lastPlayedChannelId = channel.id
                     viewModel.handoffOrClearForFullscreen(channel)
                     onPlayChannel(
                         channel,
@@ -736,6 +741,7 @@ fun LiveEpgScreen(
                     if (isGuideChannelLocked(channel, categoriesById, uiState.parentalControlLevel)) {
                         requestLockedGuideAction(LockedGuideAction.PlayChannel(channel, returnRoute))
                     } else {
+                        lastPlayedChannelId = channel.id
                         viewModel.handoffOrClearForFullscreen(channel)
                         onPlayChannel(
                             channel,

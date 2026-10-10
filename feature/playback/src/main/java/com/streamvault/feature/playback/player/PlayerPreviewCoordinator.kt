@@ -83,7 +83,9 @@ class PlayerPreviewCoordinator @Inject constructor(
         // A pane holding the lent main engine gives it straight back: the player keeps one decoder.
         val adoptedEngine = (session.engine as? BorrowedMainEngine)?.main ?: session.engine
         return runCatching {
-            adoptedEngine.clearRenderBinding()
+            // The lent main engine is already bound to the fullscreen view: clearing the binding
+            // here would detach that view, not the list's, and leave the picture black.
+            if (session.engine !is BorrowedMainEngine) adoptedEngine.clearRenderBinding()
             engineCoordinator.mainEngine.setMediaSessionEnabled(false)
             engineCoordinator.switchTo(adoptedEngine)
             adoptedEngine.setAudioFocusBypassed(false)
