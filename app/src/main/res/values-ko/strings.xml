@@ -138,6 +138,8 @@
     <string name="settings_recording_subtitle">로컬 라이브 DVR 작업, 저장 공간, 예약 캡처를 관리합니다.</string>
     <string name="settings_recording_pattern_summary">%1$s</string>
     <string name="saved_preset_watch_next">다음 시청</string>
+    <string name="tv_channel_recent_live_title">Recent channels</string>
+    <string name="tv_channel_recent_live_description">The channels you watched last, with what is on now</string>
     <string name="tv_channel_continue_watching_title">시청 계속하기</string>
     <string name="tv_channel_continue_watching_description">최근에 시작한 타이틀을 이어서 보세요</string>
     <string name="tv_channel_top_movies_title">인기 영화</string>

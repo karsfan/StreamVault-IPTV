@@ -138,6 +138,8 @@
     <string name="settings_recording_subtitle">ローカルのライブDVRジョブ、保存容量、予約録画を管理します。</string>
     <string name="settings_recording_pattern_summary">%1$s</string>
     <string name="saved_preset_watch_next">次に見る</string>
+    <string name="tv_channel_recent_live_title">Recent channels</string>
+    <string name="tv_channel_recent_live_description">The channels you watched last, with what is on now</string>
     <string name="tv_channel_continue_watching_title">視聴を再開</string>
     <string name="tv_channel_continue_watching_description">最近見始めた作品を再開</string>
     <string name="tv_channel_top_movies_title">人気映画</string>

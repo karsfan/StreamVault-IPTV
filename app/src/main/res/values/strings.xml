@@ -200,6 +200,8 @@
 
     
     <string name="saved_preset_watch_next">Watch Next</string>
+    <string name="tv_channel_recent_live_title">Recent channels</string>
+    <string name="tv_channel_recent_live_description">The channels you watched last, with what is on now</string>
     <string name="tv_channel_continue_watching_title">Continue Watching</string>
     <string name="tv_channel_continue_watching_description">Resume titles you started recently</string>
     <string name="tv_channel_top_movies_title">Top Movies</string>

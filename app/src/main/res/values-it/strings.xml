@@ -140,6 +140,8 @@
     <string name="settings_recording_subtitle">Gestisci i lavori DVR locali in tempo reale, l\'archiviazione e le acquisizioni programmate.</string>
     <string name="settings_recording_pattern_summary">%1$s</string>
     <string name="saved_preset_watch_next">Guarda Avanti</string>
+    <string name="tv_channel_recent_live_title">Canali recenti</string>
+    <string name="tv_channel_recent_live_description">I canali che hai guardato per ultimi, con il programma in onda</string>
     <string name="tv_channel_continue_watching_title">Continua a guardare</string>
     <string name="tv_channel_continue_watching_description">Riprendi i titoli che hai iniziato di recente</string>
     <string name="tv_channel_top_movies_title">I migliori film</string>

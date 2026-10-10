@@ -138,6 +138,8 @@
     <string name="settings_recording_subtitle">Administrer lokale DVR-jobber, lagring og planlagte opptak.</string>
     <string name="settings_recording_pattern_summary">%1$s</string>
     <string name="saved_preset_watch_next">Se neste</string>
+    <string name="tv_channel_recent_live_title">Recent channels</string>
+    <string name="tv_channel_recent_live_description">The channels you watched last, with what is on now</string>
     <string name="tv_channel_continue_watching_title">Fortsett å se</string>
     <string name="tv_channel_continue_watching_description">Fortsett titler du nylig startet</string>
     <string name="tv_channel_top_movies_title">Topp filmer</string>

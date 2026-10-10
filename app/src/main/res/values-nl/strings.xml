@@ -138,6 +138,8 @@
     <string name="settings_recording_subtitle">Beheer lokale live DVR-taken, opslag en geplande opnames.</string>
     <string name="settings_recording_pattern_summary">%1$s</string>
     <string name="saved_preset_watch_next">Kijk Volgende</string>
+    <string name="tv_channel_recent_live_title">Recent channels</string>
+    <string name="tv_channel_recent_live_description">The channels you watched last, with what is on now</string>
     <string name="tv_channel_continue_watching_title">Ga door met kijken</string>
     <string name="tv_channel_continue_watching_description">Hervat titels waarmee u onlangs bent begonnen</string>
     <string name="tv_channel_top_movies_title">Topfilms</string>

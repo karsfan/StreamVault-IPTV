@@ -138,6 +138,8 @@
     <string name="settings_recording_subtitle">Quản lý các tác vụ DVR trực tiếp cục bộ, bộ nhớ và lịch ghi.</string>
     <string name="settings_recording_pattern_summary">%1$s</string>
     <string name="saved_preset_watch_next">Xem tiếp</string>
+    <string name="tv_channel_recent_live_title">Recent channels</string>
+    <string name="tv_channel_recent_live_description">The channels you watched last, with what is on now</string>
     <string name="tv_channel_continue_watching_title">Tiếp tục xem</string>
     <string name="tv_channel_continue_watching_description">Tiếp tục các nội dung bạn mới xem gần đây</string>
     <string name="tv_channel_top_movies_title">Phim hay nhất</string>

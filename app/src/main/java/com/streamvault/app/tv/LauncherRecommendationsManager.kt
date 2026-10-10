@@ -17,12 +17,16 @@ import com.streamvault.app.R
 import com.streamvault.app.device.isTelevisionDevice
 import com.streamvault.core.navigation.AppDestination
 import com.streamvault.core.navigation.PlayerNavigationRequest
+import com.streamvault.app.navigation.toLivePlayerRequest
 import com.streamvault.app.navigation.toPlayerNavigationRequest
 import com.streamvault.domain.model.ActiveLiveSource
 import com.streamvault.domain.model.ContentType
 import com.streamvault.domain.model.PlaybackHistory
 import com.streamvault.domain.model.LegacyProvider as Provider
+import com.streamvault.domain.model.guideLookupKey
+import com.streamvault.domain.repository.ChannelRepository
 import com.streamvault.domain.repository.CombinedM3uRepository
+import com.streamvault.domain.repository.EpgRepository
 import com.streamvault.domain.repository.MovieRepository
 import com.streamvault.domain.repository.PlaybackHistoryRepository
 import com.streamvault.domain.repository.ProviderRepository
@@ -48,7 +52,9 @@ class LauncherRecommendationsManager @Inject constructor(
     private val combinedM3uRepository: CombinedM3uRepository,
     private val playbackHistoryRepository: PlaybackHistoryRepository,
     movieRepository: MovieRepository,
-    private val seriesRepository: SeriesRepository
+    private val seriesRepository: SeriesRepository,
+    private val channelRepository: ChannelRepository,
+    private val epgRepository: EpgRepository
 ) {
     private val getRecommendations = GetRecommendations(movieRepository)
     private val getContinueWatching = GetContinueWatching(playbackHistoryRepository)
@@ -206,6 +212,12 @@ class LauncherRecommendationsManager @Inject constructor(
 
         return listOf(
             RecommendationChannelSpec(
+                key = CHANNEL_RECENT_LIVE,
+                title = context.getString(R.string.tv_channel_recent_live_title),
+                description = context.getString(R.string.tv_channel_recent_live_description),
+                programs = recentLiveChannels(provider)
+            ),
+            RecommendationChannelSpec(
                 key = CHANNEL_CONTINUE_WATCHING,
                 title = context.getString(R.string.tv_channel_continue_watching_title),
                 description = context.getString(R.string.tv_channel_continue_watching_description),
@@ -225,6 +237,47 @@ class LauncherRecommendationsManager @Inject constructor(
                 programs = freshSeries
             )
         )
+    }
+
+    /**
+     * The live channels watched last, each with what is on air now. Live history has no resume
+     * position, so the continue-watching row never shows it: without this row a live-only user
+     * gets no launcher previews at all.
+     */
+    private suspend fun recentLiveChannels(provider: Provider): List<RecommendationProgramSpec> {
+        val channels = playbackHistoryRepository.getRecentlyWatchedByProvider(provider.id, limit = RECENT_HISTORY_SCAN)
+            .first()
+            .filter { it.contentType == ContentType.LIVE }
+            .sortedByDescending { it.lastWatchedAt }
+            .distinctBy { it.contentId }
+            .mapNotNull { channelRepository.getChannel(it.contentId) }
+            .take(RECENT_LIVE_LIMIT)
+        if (channels.isEmpty()) return emptyList()
+        val now = System.currentTimeMillis()
+        val programsByKey = runCatching {
+            epgRepository.getResolvedProgramsForChannels(
+                providerId = provider.id,
+                channelIds = channels.map { it.id },
+                startTime = now - NOW_LOOKBACK_MS,
+                endTime = now + NOW_LOOKBACK_MS
+            )
+        }.getOrDefault(emptyMap())
+        return channels.mapIndexed { index, channel ->
+            val onAir = channel.guideLookupKey()
+                ?.let(programsByKey::get)
+                ?.firstOrNull { it.startTime <= now && it.endTime > now }
+            RecommendationProgramSpec(
+                key = "live:${channel.id}",
+                title = channel.name,
+                description = onAir?.title ?: provider.name,
+                posterArtUri = artworkUri(channel.logoUrl),
+                intentUri = buildPlayerIntent(channel.toLivePlayerRequest()).toUri(Intent.URI_INTENT_SCHEME),
+                weight = (RECENT_LIVE_WEIGHT_BASE - index).coerceAtLeast(0),
+                durationMillis = 0L,
+                playbackPositionMillis = 0L,
+                contentType = ContentType.LIVE
+            )
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -440,15 +493,21 @@ class LauncherRecommendationsManager @Inject constructor(
     private companion object {
         const val TAG = "LauncherRecommendations"
         const val MIN_REFRESH_INTERVAL_MS = 15 * 60 * 1000L
+        const val CHANNEL_RECENT_LIVE = "streamvault_recent_live"
         const val CHANNEL_CONTINUE_WATCHING = "streamvault_continue_watching"
         const val CHANNEL_TOP_MOVIES = "streamvault_top_movies"
         const val CHANNEL_FRESH_SERIES = "streamvault_fresh_series"
         val MANAGED_CHANNEL_KEYS = setOf(
+            CHANNEL_RECENT_LIVE,
             CHANNEL_CONTINUE_WATCHING,
             CHANNEL_TOP_MOVIES,
             CHANNEL_FRESH_SERIES
         )
         const val TOP_MOVIE_WEIGHT_BASE = 10_000
+        const val RECENT_LIVE_WEIGHT_BASE = 11_000
+        const val RECENT_LIVE_LIMIT = 10
+        const val RECENT_HISTORY_SCAN = 40
+        const val NOW_LOOKBACK_MS = 3 * 60 * 60 * 1000L
         const val FRESH_SERIES_WEIGHT_BASE = 9_000
         const val CHANNEL_COLUMN_TYPE = "type"
         const val CHANNEL_COLUMN_DISPLAY_NAME = "display_name"

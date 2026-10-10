@@ -149,6 +149,8 @@
     <string name="settings_recording_subtitle">Gérez les tâches DVR en direct locales, le stockage et les captures programmées.</string>
     <string name="settings_recording_pattern_summary">%1$s</string>
     <string name="saved_preset_watch_next">Regarder ensuite</string>
+    <string name="tv_channel_recent_live_title">Recent channels</string>
+    <string name="tv_channel_recent_live_description">The channels you watched last, with what is on now</string>
     <string name="tv_channel_continue_watching_title">Continuer à regarder</string>
     <string name="tv_channel_continue_watching_description">Reprendre les titres que vous avez commencés récemment</string>
     <string name="tv_channel_top_movies_title">Meilleurs films</string>
