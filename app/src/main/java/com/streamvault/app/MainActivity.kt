@@ -31,6 +31,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 import javax.inject.Inject
 import com.streamvault.data.preferences.PreferencesRepository
+import com.streamvault.data.sync.ProviderSyncWorker
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -270,6 +271,13 @@ class MainActivity : ComponentActivity(), CatalogPlatformHost {
             }
         }
         databaseStartupCoordinator.start()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // A TV in standby keeps this process alive for days, so the process-start check alone
+        // never sees the guide expire. Coming back to the screen is when stale data shows up.
+        ProviderSyncWorker.enqueueLaunchStaleCheck(this)
     }
 
     override fun onResume() {

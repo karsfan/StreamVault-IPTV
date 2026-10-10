@@ -42,7 +42,9 @@ class BackgroundEpgSyncWorker(
         // Stalker EPG path is heap-frugal but the surrounding sync work (channel inserts,
         // EPG resolution) can still allocate; retrying later avoids piling onto a stressed
         // system. WorkManager will re-enqueue with backoff.
-        if (applicationContext.isCurrentlyLowOnMemoryForSync()) {
+        // Only a few times, though: on a TV the memory is low whenever a channel is playing, and
+        // deferring every attempt can let the guide expire while the user is watching.
+        if (runAttemptCount < MAX_LOW_MEMORY_DEFERRALS && applicationContext.isCurrentlyLowOnMemoryForSync()) {
             Log.w(TAG, "Deferring background EPG sync for provider $providerId: device low on memory")
             return Result.retry()
         }
@@ -123,6 +125,7 @@ class BackgroundEpgSyncWorker(
         private const val KEY_PROVIDER_ID = "provider_id"
         private const val KEY_FORCE_REFRESH = "force_refresh"
         private const val INVALID_PROVIDER_ID = -1L
+        private const val MAX_LOW_MEMORY_DEFERRALS = 3
         /**
          * Default delay before the first background EPG sync runs after enqueue. This
          * replaces the in-process [kotlinx.coroutines.delay] previously used by the
