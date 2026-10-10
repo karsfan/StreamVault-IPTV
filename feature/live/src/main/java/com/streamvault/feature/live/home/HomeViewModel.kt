@@ -1206,6 +1206,11 @@ class HomeViewModel @Inject constructor(
     fun resumePreviewFromHandoff() {
         val session = livePreviewHandoffManager.consumeReverseHandoff(LivePreviewOrigin.HOME) ?: return
         val engine = session.engine
+        // Only the pro layout has a preview pane; elsewhere the engine would play unseen.
+        if (_uiState.value.liveTvChannelMode != LiveTvChannelMode.PRO) {
+            engine.release()
+            return
+        }
         previewSessionVersion++
         val version = previewSessionVersion
         previewPlaybackJob?.cancel()

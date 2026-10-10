@@ -196,7 +196,17 @@ internal fun PlayerViewModel.cleanupAfterCleared(mainPlayerEngine: PlayerEngine)
         && streamInfo != null
         && activeEngine.playbackState.value != PlaybackState.ERROR
 
-    if (canReverseHandoff) {
+    val lentMainEngine = currentContentType == ContentType.LIVE
+        && !isCatchUpPlayback.value
+        && activeEngine === mainPlayerEngine
+        && channel != null
+        && streamInfo != null
+        && activeEngine.playbackState.value != PlaybackState.ERROR
+        && playerPreviewCoordinator.lendMainEngine(channel, streamInfo, mainPlayerEngine)
+
+    if (lentMainEngine) {
+        // The list's preview pane now plays it; the next player revokes the loan on start.
+    } else if (canReverseHandoff) {
         playerPreviewCoordinator.beginReverseHandoff(
             channel = channel!!,
             streamInfo = streamInfo!!,

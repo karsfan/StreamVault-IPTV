@@ -96,6 +96,7 @@ import com.streamvault.feature.playback.player.overlay.NextEpisodeCountdownOverl
 import com.streamvault.feature.playback.player.overlay.SkipChapterOverlay
 import com.streamvault.feature.playback.player.LiveClockOverlay
 import com.streamvault.core.navigation.AppDestination
+import com.streamvault.feature.playback.preview.PreviewHandoffSource
 
 
 
@@ -127,6 +128,14 @@ fun PlayerScreen(
     splitScreenPlanner: @Composable (Channel, () -> Unit, () -> Unit) -> Unit = { _, _, _ -> },
     viewModel: PlayerViewModel = hiltViewModel()
 ) {
+    // Only the live list and the Guide have a preview pane to keep the channel playing in.
+    SideEffect {
+        viewModel.playerPreviewCoordinator.returnSource = when (returnDestination) {
+            is AppDestination.LiveTv -> PreviewHandoffSource.HOME
+            is AppDestination.Guide -> PreviewHandoffSource.GUIDE
+            else -> null
+        }
+    }
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val isTelevisionDevice = rememberIsTelevisionDevice()
     val sideOverlayWidth = if (screenWidth < 700.dp) {

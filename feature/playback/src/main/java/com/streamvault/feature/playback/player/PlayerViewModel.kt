@@ -1,5 +1,6 @@
 package com.streamvault.feature.playback.player
 
+import com.streamvault.feature.playback.preview.BorrowedMainEngine
 import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -525,6 +526,8 @@ class PlayerViewModel @Inject constructor(
     }
 
     init {
+        // A list pane may still hold the main engine from the previous player; it is ours now.
+        BorrowedMainEngine.revoke(playerEngineCoordinator.mainEngine)
         observeCastPlaybackEvents()
         observeEquivalentVariants()
         observeRepeatedRebuffering()

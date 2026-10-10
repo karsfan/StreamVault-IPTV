@@ -1,6 +1,7 @@
 package com.streamvault.feature.playback.player
 
 import android.os.Build
+import com.streamvault.feature.playback.preview.BorrowedMainEngine
 import com.streamvault.feature.playback.preview.LivePreviewHandoffManager
 import com.streamvault.feature.playback.preview.PreviewHandoffSource
 import com.streamvault.domain.model.ContentType
@@ -34,6 +35,19 @@ class PlayerPreviewCoordinator @Inject constructor(
     // until the process died, and every fullscreen channel after that stayed black.
     private var adoptedSource = PreviewHandoffSource.HOME
 
+    /** The live list the player returns to; null when it returns somewhere without a preview pane. */
+    internal var returnSource: PreviewHandoffSource? = null
+
+    /**
+     * Leaving a channel opened without a preview: lend the fullscreen engine to the list it
+     * returns to, so the pane keeps showing the channel instead of "select a channel".
+     */
+    internal fun lendMainEngine(channel: Channel, streamInfo: StreamInfo, main: PlayerEngine): Boolean {
+        val source = returnSource ?: return false
+        handoffManager.beginReverseHandoff(channel, streamInfo, BorrowedMainEngine.lend(main), source)
+        return true
+    }
+
     internal fun beginReverseHandoff(
         channel: Channel,
         streamInfo: StreamInfo,
@@ -66,7 +80,8 @@ class PlayerPreviewCoordinator @Inject constructor(
             return false
         }
 
-        val adoptedEngine = session.engine
+        // A pane holding the lent main engine gives it straight back: the player keeps one decoder.
+        val adoptedEngine = (session.engine as? BorrowedMainEngine)?.main ?: session.engine
         return runCatching {
             adoptedEngine.clearRenderBinding()
             engineCoordinator.mainEngine.setMediaSessionEnabled(false)
@@ -81,7 +96,7 @@ class PlayerPreviewCoordinator @Inject constructor(
             )
             if (!isCurrent()) {
                 engineCoordinator.switchTo(engineCoordinator.mainEngine)
-                adoptedEngine.release()
+                discard(adoptedEngine)
                 false
             } else {
                 onAdopted(session.streamInfo)
@@ -95,9 +110,14 @@ class PlayerPreviewCoordinator @Inject constructor(
             if (engineCoordinator.currentEngine === adoptedEngine) {
                 engineCoordinator.switchTo(engineCoordinator.mainEngine)
             }
-            adoptedEngine.release()
+            discard(adoptedEngine)
             false
         }
+    }
+
+    // The main engine is reused by every player session: reset it, never release it.
+    private fun discard(engine: PlayerEngine) {
+        if (engine === engineCoordinator.mainEngine) engine.resetForReuse() else engine.release()
     }
 
     private fun shouldBypassForFireTvLiveHls(streamInfo: StreamInfo): Boolean {
