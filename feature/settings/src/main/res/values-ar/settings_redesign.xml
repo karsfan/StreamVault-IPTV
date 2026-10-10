@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">حفظ المنطقة الزمنية</string>
     <string name="settings_epg_timezone_action">المنطقة الزمنية</string>
     <string name="settings_epg_source_error">الخطأ: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">آخر مزامنة: منذ %1$d قبل دقيقة</string>
+    <string name="settings_epg_last_synced">آخر مزامنة: %1$s</string>
     <string name="settings_epg_refresh">تحديث</string>
     <string name="settings_epg_refreshing">جارٍ التحديث…</string>
     <string name="settings_epg_confirm_delete">تأكيد الحذف</string>

@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Zapisz strefę czasową</string>
     <string name="settings_epg_timezone_action">Strefa czasowa</string>
     <string name="settings_epg_source_error">Błąd: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Ostatnia synchronizacja: %1$d min temu</string>
+    <string name="settings_epg_last_synced">Ostatnia synchronizacja: %1$s</string>
     <string name="settings_epg_refresh">Odśwież</string>
     <string name="settings_epg_refreshing">Odświeżanie…</string>
     <string name="settings_epg_confirm_delete">Potwierdź usunięcie</string>

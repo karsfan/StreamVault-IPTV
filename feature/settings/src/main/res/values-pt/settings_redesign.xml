@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Salvar fuso horário</string>
     <string name="settings_epg_timezone_action">Fuso horário</string>
     <string name="settings_epg_source_error">Erro: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Última sincronização: %1$d há um minuto</string>
+    <string name="settings_epg_last_synced">Última sincronização: %1$s</string>
     <string name="settings_epg_refresh">Atualizar</string>
     <string name="settings_epg_refreshing">Refrescante…</string>
     <string name="settings_epg_confirm_delete">Confirmar exclusão</string>

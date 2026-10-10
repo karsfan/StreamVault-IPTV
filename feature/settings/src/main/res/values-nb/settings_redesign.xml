@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Lagre tidssone</string>
     <string name="settings_epg_timezone_action">Tidssone</string>
     <string name="settings_epg_source_error">Feil: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Sist synkronisert: %1$d min siden</string>
+    <string name="settings_epg_last_synced">Sist synkronisert: %1$s</string>
     <string name="settings_epg_refresh">Oppdater</string>
     <string name="settings_epg_refreshing">Oppdaterer …</string>
     <string name="settings_epg_confirm_delete">Bekreft sletting</string>

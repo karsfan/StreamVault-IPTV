@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Зберегти часовий пояс</string>
     <string name="settings_epg_timezone_action">Часовий пояс</string>
     <string name="settings_epg_source_error">Помилка: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Остання синхронізація: %1$d хв тому</string>
+    <string name="settings_epg_last_synced">Остання синхронізація: %1$s</string>
     <string name="settings_epg_refresh">Оновити</string>
     <string name="settings_epg_refreshing">Оновлення…</string>
     <string name="settings_epg_confirm_delete">Підтвердити видалення</string>

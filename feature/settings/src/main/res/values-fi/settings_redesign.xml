@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Tallenna aikavyöhyke</string>
     <string name="settings_epg_timezone_action">Aikavyöhyke</string>
     <string name="settings_epg_source_error">Virhe: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Viimeksi synkronoitu: %1$d min sitten</string>
+    <string name="settings_epg_last_synced">Viimeksi synkronoitu: %1$s</string>
     <string name="settings_epg_refresh">Päivitä</string>
     <string name="settings_epg_refreshing">Päivitetään…</string>
     <string name="settings_epg_confirm_delete">Vahvista poistaminen</string>

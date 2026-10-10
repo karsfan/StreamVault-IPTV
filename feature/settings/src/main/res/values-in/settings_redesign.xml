@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Simpan zona waktu</string>
     <string name="settings_epg_timezone_action">Zona waktu</string>
     <string name="settings_epg_source_error">Kesalahan: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Terakhir disinkronkan: %1$d menit yang lalu</string>
+    <string name="settings_epg_last_synced">Terakhir disinkronkan: %1$s</string>
     <string name="settings_epg_refresh">Segarkan</string>
     <string name="settings_epg_refreshing">Menyegarkan…</string>
     <string name="settings_epg_confirm_delete">Konfirmasi penghapusan</string>

@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Spara tidszon</string>
     <string name="settings_epg_timezone_action">Tidszon</string>
     <string name="settings_epg_source_error">Fel: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Senast synkroniserad: %1$d min sedan</string>
+    <string name="settings_epg_last_synced">Senast synkroniserad: %1$s</string>
     <string name="settings_epg_refresh">Uppdatera</string>
     <string name="settings_epg_refreshing">Uppfriskande...</string>
     <string name="settings_epg_confirm_delete">Bekräfta borttagning</string>

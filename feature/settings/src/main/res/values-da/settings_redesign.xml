@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Gem tidszone</string>
     <string name="settings_epg_timezone_action">Tidszone</string>
     <string name="settings_epg_source_error">Fejl: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Sidst synkroniseret: %1$d for min. siden</string>
+    <string name="settings_epg_last_synced">Sidst synkroniseret: %1$s</string>
     <string name="settings_epg_refresh">Opdater</string>
     <string name="settings_epg_refreshing">Forfriskende...</string>
     <string name="settings_epg_confirm_delete">Bekræft sletning</string>

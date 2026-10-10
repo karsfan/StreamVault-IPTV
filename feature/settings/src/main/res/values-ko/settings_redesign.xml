@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">시간대 저장</string>
     <string name="settings_epg_timezone_action">시간대</string>
     <string name="settings_epg_source_error">오류: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">마지막 동기화: %1$d분 전</string>
+    <string name="settings_epg_last_synced">마지막 동기화: %1$s</string>
     <string name="settings_epg_refresh">새로고침</string>
     <string name="settings_epg_refreshing">상쾌하다…</string>
     <string name="settings_epg_confirm_delete">삭제 확인</string>

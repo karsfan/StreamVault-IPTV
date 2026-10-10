@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Saat dilimini kaydet</string>
     <string name="settings_epg_timezone_action">Saat dilimi</string>
     <string name="settings_epg_source_error">Hata: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Son senkronizasyon: %1$d dakika önce</string>
+    <string name="settings_epg_last_synced">Son senkronizasyon: %1$s</string>
     <string name="settings_epg_refresh">Yenile</string>
     <string name="settings_epg_refreshing">Yenileniyor…</string>
     <string name="settings_epg_confirm_delete">Silmeyi onayla</string>

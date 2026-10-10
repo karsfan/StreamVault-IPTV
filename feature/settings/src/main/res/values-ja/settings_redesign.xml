@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">タイムゾーンを保存する</string>
     <string name="settings_epg_timezone_action">タイムゾーン</string>
     <string name="settings_epg_source_error">エラー: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">最終同期: %1$d 分前</string>
+    <string name="settings_epg_last_synced">最終同期: %1$s</string>
     <string name="settings_epg_refresh">リフレッシュ</string>
     <string name="settings_epg_refreshing">爽やか…</string>
     <string name="settings_epg_confirm_delete">削除の確認</string>

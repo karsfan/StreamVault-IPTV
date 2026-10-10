@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Uložit časové pásmo</string>
     <string name="settings_epg_timezone_action">Časové pásmo</string>
     <string name="settings_epg_source_error">Chyba: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Poslední synchronizace: před %1$d min</string>
+    <string name="settings_epg_last_synced">Poslední synchronizace: %1$s</string>
     <string name="settings_epg_refresh">Obnovit</string>
     <string name="settings_epg_refreshing">Obnovování…</string>
     <string name="settings_epg_confirm_delete">Potvrďte smazání</string>

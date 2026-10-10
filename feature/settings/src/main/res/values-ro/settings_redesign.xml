@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Salvați fusul orar</string>
     <string name="settings_epg_timezone_action">fus orar</string>
     <string name="settings_epg_source_error">Eroare: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Ultima sincronizare: acum %1$d min</string>
+    <string name="settings_epg_last_synced">Ultima sincronizare: %1$s</string>
     <string name="settings_epg_refresh">Reîmprospătați</string>
     <string name="settings_epg_refreshing">Înviorare…</string>
     <string name="settings_epg_confirm_delete">Confirmați ștergerea</string>

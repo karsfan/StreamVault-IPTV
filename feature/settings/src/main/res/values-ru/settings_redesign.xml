@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Сохранить часовой пояс</string>
     <string name="settings_epg_timezone_action">Часовой пояс</string>
     <string name="settings_epg_source_error">Ошибка: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Последняя синхронизация: %1$d мин. назад</string>
+    <string name="settings_epg_last_synced">Последняя синхронизация: %1$s</string>
     <string name="settings_epg_refresh">Обновить</string>
     <string name="settings_epg_refreshing">Обновление…</string>
     <string name="settings_epg_confirm_delete">Подтвердить удаление</string>

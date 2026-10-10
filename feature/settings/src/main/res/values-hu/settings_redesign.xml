@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Időzóna mentése</string>
     <string name="settings_epg_timezone_action">Időzóna</string>
     <string name="settings_epg_source_error">Hiba: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Utolsó szinkronizálás: %1$d perccel ezelőtt</string>
+    <string name="settings_epg_last_synced">Utolsó szinkronizálás: %1$s</string>
     <string name="settings_epg_refresh">Frissítés</string>
     <string name="settings_epg_refreshing">Frissítés…</string>
     <string name="settings_epg_confirm_delete">Erősítse meg a törlést</string>

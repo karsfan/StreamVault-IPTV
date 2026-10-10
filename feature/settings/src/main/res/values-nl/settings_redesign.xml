@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Tijdzone opslaan</string>
     <string name="settings_epg_timezone_action">Tijdzone</string>
     <string name="settings_epg_source_error">Fout: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Laatst gesynchroniseerd: %1$d min geleden</string>
+    <string name="settings_epg_last_synced">Laatst gesynchroniseerd: %1$s</string>
     <string name="settings_epg_refresh">Vernieuwen</string>
     <string name="settings_epg_refreshing">Verfrissend…</string>
     <string name="settings_epg_confirm_delete">Bevestig het verwijderen</string>

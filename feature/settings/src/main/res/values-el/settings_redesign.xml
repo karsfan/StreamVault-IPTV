@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Αποθήκευση ζώνης ώρας</string>
     <string name="settings_epg_timezone_action">Ζώνη ώρας</string>
     <string name="settings_epg_source_error">Σφάλμα: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Τελευταίος συγχρονισμός: %1$d πριν από λεπτά</string>
+    <string name="settings_epg_last_synced">Τελευταίος συγχρονισμός: %1$s</string>
     <string name="settings_epg_refresh">Ανανέωση</string>
     <string name="settings_epg_refreshing">Ανανέωση…</string>
     <string name="settings_epg_confirm_delete">Επιβεβαίωση διαγραφής</string>

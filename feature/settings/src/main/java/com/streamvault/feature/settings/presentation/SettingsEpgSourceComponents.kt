@@ -1,5 +1,6 @@
 package com.streamvault.feature.settings.presentation
 
+import android.text.format.DateUtils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -150,9 +151,14 @@ internal fun EpgSourceCard(
                         )
                     }
                     if (source.lastSuccessAt > 0L) {
-                        val ago = (System.currentTimeMillis() - source.lastSuccessAt) / 60000
+                        // "3 days ago" rather than a raw minute count, localized by the platform.
+                        val ago = DateUtils.getRelativeTimeSpanString(
+                            source.lastSuccessAt,
+                            System.currentTimeMillis(),
+                            DateUtils.MINUTE_IN_MILLIS
+                        )
                         Text(
-                            stringResource(R.string.settings_epg_last_synced_minutes, ago),
+                            stringResource(R.string.settings_epg_last_synced, ago),
                             style = MaterialTheme.typography.bodySmall,
                             color = OnSurfaceDim,
                         )

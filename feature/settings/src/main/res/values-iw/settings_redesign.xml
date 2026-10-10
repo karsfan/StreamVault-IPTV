@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">שמור אזור זמן</string>
     <string name="settings_epg_timezone_action">אזור זמן</string>
     <string name="settings_epg_source_error">שגיאה: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">סנכרון אחרון: %1$d לפני דקות</string>
+    <string name="settings_epg_last_synced">סנכרון אחרון: %1$s</string>
     <string name="settings_epg_refresh">רענן</string>
     <string name="settings_epg_refreshing">מרענן…</string>
     <string name="settings_epg_confirm_delete">אשר את המחיקה</string>

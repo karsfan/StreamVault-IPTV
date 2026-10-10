@@ -77,7 +77,7 @@
     <string name="settings_epg_timezone_save">Lưu múi giờ</string>
     <string name="settings_epg_timezone_action">Múi giờ</string>
     <string name="settings_epg_source_error">Lỗi: %1$s</string>
-    <string name="settings_epg_last_synced_minutes">Đồng bộ hóa lần cuối: %1$d phút trước</string>
+    <string name="settings_epg_last_synced">Đồng bộ hóa lần cuối: %1$s</string>
     <string name="settings_epg_refresh">Làm mới</string>
     <string name="settings_epg_refreshing">Đang làm mới…</string>
     <string name="settings_epg_confirm_delete">Xác nhận xóa</string>
