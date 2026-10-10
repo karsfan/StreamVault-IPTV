@@ -76,14 +76,16 @@ class StartupNavigationResolver @Inject constructor(
                 .sortedByDescending { it.lastWatchedAt }
                 .map { it.contentId },
             sourceContext = context,
-            virtualCategoryId = VirtualCategoryIds.RECENT
+            // Resume inside the channel's own group, as if it had been picked from the list:
+            // the Recent list would turn up/down into a walk through yesterday's channels.
+            virtualCategoryId = null
         )
     }
 
     private suspend fun resolveStartupChannelTarget(
         channelIds: List<Long>,
         sourceContext: LiveStartupContext,
-        virtualCategoryId: Long
+        virtualCategoryId: Long?
     ): PlayerNavigationRequest? {
         if (channelIds.isEmpty()) return null
         val hiddenChannelIdsByProvider = sourceContext.providerIds.associateWith { providerId ->
@@ -94,9 +96,9 @@ class StartupNavigationResolver @Inject constructor(
             if (channel.providerId !in sourceContext.providerIds) continue
             if (channel.id in hiddenChannelIdsByProvider[channel.providerId].orEmpty()) continue
             return channel.toLivePlayerRequest(
-                categoryId = virtualCategoryId,
+                categoryId = virtualCategoryId ?: channel.categoryId,
                 providerId = channel.providerId,
-                isVirtual = true,
+                isVirtual = virtualCategoryId != null,
                 combinedProfileId = (sourceContext as? LiveStartupContext.Combined)?.profileId,
                 returnDestination = AppDestination.LiveTv()
             )

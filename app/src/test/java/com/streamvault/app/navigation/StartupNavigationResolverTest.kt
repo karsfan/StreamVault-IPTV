@@ -88,11 +88,14 @@ class StartupNavigationResolverTest {
             )
         )
         whenever(preferencesRepository.getHiddenChannelIds(7L)).thenReturn(flowOf(emptySet()))
-        whenever(channelRepository.getChannel(42L)).thenReturn(channel(42L, 7L))
+        whenever(channelRepository.getChannel(42L)).thenReturn(channel(42L, 7L).copy(categoryId = 5L))
 
         val result = resolver.resolve(AppLandingDestination.LAST_WATCHED_LIVE)
 
         assertThat(result.playerRequest?.internalId).isEqualTo(42L)
+        // Resumes inside the channel's own group, not the Recent list.
+        assertThat(result.playerRequest?.categoryId).isEqualTo(5L)
+        assertThat(result.playerRequest?.isVirtual).isFalse()
     }
 
     @Test
