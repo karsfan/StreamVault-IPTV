@@ -34,7 +34,7 @@
     --key-light: var(--key); --key-light-active: var(--key-active);
   }
 }
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
 html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); }
 body {
   min-height: 100dvh; display: flex; justify-content: center;
@@ -172,32 +172,37 @@ details[open] summary { margin-bottom: 12px; }
     status.className = 'status ' + (state === 'ok' ? 'ok' : 'off');
     status.textContent = state === 'ok' ? 'collegato' : state === 'off' ? 'apri Tivù sulla TV' : 'TV non raggiungibile';
   };
-  // Haptics: Android has navigator.vibrate; iOS Safari does not, but since iOS 18 toggling a
-  // native switch control taps the Taptic Engine, which is what the iOS haptics libraries do.
-  const hapticSwitch = (() => {
+  // iOS haptics, from tijnjh/ios-haptics 3.2.0 (MIT): Safari only buzzes when a real tap
+  // toggles a native switch, so each button gets a transparent label wired to a hidden one.
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const hapticTrigger = (element) => {
+    if (!isIos || element.querySelector(':scope > [data-haptic-trigger]')) return;
     const label = document.createElement('label');
+    label.setAttribute('data-haptic-trigger', '');
     label.setAttribute('aria-hidden', 'true');
-    // Kept inside the viewport (WebKit may skip controls laid out off screen), just invisible.
-    label.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;overflow:hidden;pointer-events:none';
+    Object.assign(label.style, { position: 'absolute', inset: '0', touchAction: 'manipulation' });
+    label.style.setProperty('-webkit-tap-highlight-color', 'transparent');
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.setAttribute('switch', '');
-    label.appendChild(input);
-    document.body.appendChild(label);
-    return label;
-  })();
-  // Android vibrates on touch down. iOS only lets the switch fire from a user activation, and
-  // for touch WebKit grants that on the finger lift (pointerup), not on pointerdown.
+    // Never under the finger: a touchstart on the switch itself would be swallowed by WebKit.
+    Object.assign(input.style, { position: 'absolute', width: '1px', height: '1px', margin: '0', visibility: 'hidden' });
+    input.addEventListener('click', (event) => event.stopPropagation());
+    label.append(input);
+    if (getComputedStyle(element).position === 'static') element.style.position = 'relative';
+    element.insertAdjacentElement('beforeend', label);
+  };
   const buzzDown = () => { if (navigator.vibrate) navigator.vibrate(10); };
-  const buzzUp = () => { if (!navigator.vibrate) hapticSwitch.click(); };
 
   let volumeTimer = null;
   const stopVolume = () => { clearTimeout(volumeTimer); clearInterval(volumeTimer); volumeTimer = null; };
 
   document.querySelectorAll('button').forEach((b) => {
+    hapticTrigger(b);
     let held = false;
-    const press = (e) => {
-      e.preventDefault();
+    // No preventDefault here: the tap has to reach the haptic label as a real click.
+    const press = () => {
       if (held) return;
       held = true;
       b.classList.add('down');
@@ -214,10 +219,9 @@ details[open] summary { margin-bottom: 12px; }
         }
       }
     };
-    const release = (e) => {
+    const release = () => {
       if (!held) return;
       held = false;
-      if (e && e.type === 'pointerup') buzzUp();
       b.classList.remove('down');
       if (b.dataset.k) send('/up');
       stopVolume();
