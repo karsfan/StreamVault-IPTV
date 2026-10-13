@@ -132,6 +132,7 @@ abstract class ProviderWorkflowDao {
           AND (
               :priority >= priority
               OR state IN ('SUCCEEDED', 'PARTIAL', 'FAILED', 'CANCELLED')
+              OR (state = 'PENDING' AND lease_token IS NULL AND updated_at <= :priorityLapsedBefore)
           )
         """
     )
@@ -141,6 +142,8 @@ abstract class ProviderWorkflowDao {
         priority: Int,
         force: Boolean,
         now: Long
+  ,
+        priorityLapsedBefore: Long
     ): Int
 
     @Query(
@@ -168,6 +171,8 @@ abstract class ProviderWorkflowDao {
             reason = :reason,
             priority = CASE
                 WHEN state IN ('SUCCEEDED', 'PARTIAL', 'FAILED', 'CANCELLED') THEN :priority
+                WHEN state = 'PENDING' AND lease_token IS NULL AND updated_at <= :priorityLapsedBefore
+                    THEN :priority
                 ELSE MAX(priority, :priority)
             END,
             force = CASE
@@ -184,6 +189,7 @@ abstract class ProviderWorkflowDao {
           AND (
               :priority >= priority
               OR state IN ('SUCCEEDED', 'PARTIAL', 'FAILED', 'CANCELLED')
+              OR (state = 'PENDING' AND lease_token IS NULL AND updated_at <= :priorityLapsedBefore)
           )
         """
     )
@@ -193,6 +199,8 @@ abstract class ProviderWorkflowDao {
         priority: Int,
         force: Boolean,
         now: Long
+  ,
+        priorityLapsedBefore: Long
     ): Int
 
     @Query(
@@ -263,7 +271,8 @@ abstract class ProviderWorkflowDao {
         supersede: Boolean = false,
         priority: Int = 0,
         force: Boolean = false,
-        staleHeartbeatBefore: Long = now - DEFAULT_STALE_HEARTBEAT_MILLIS
+        staleHeartbeatBefore: Long = now - DEFAULT_STALE_HEARTBEAT_MILLIS,
+        priorityLapsedBefore: Long = now - PRIORITY_HOLD_MILLIS
     ): ProviderWorkflowTicket {
         val inserted = insertWorkflow(
             ProviderWorkflowEntity(
@@ -281,9 +290,9 @@ abstract class ProviderWorkflowDao {
         var admitted = true
         if (inserted == -1L) {
             if (supersede) {
-                admitted = supersedeWorkflow(providerId, reason, priority, force, now) == 1
+                admitted = supersedeWorkflow(providerId, reason, priority, force, now, priorityLapsedBefore) == 1
             } else {
-                admitted = joinWorkflow(providerId, reason, priority, force, now) == 1
+                admitted = joinWorkflow(providerId, reason, priority, force, now, priorityLapsedBefore) == 1
             }
         }
 
@@ -670,5 +679,13 @@ abstract class ProviderWorkflowDao {
 
     private companion object {
         const val DEFAULT_STALE_HEARTBEAT_MILLIS = 2 * 60_000L
+
+        /**
+         * How long a higher-priority request keeps lower ones out once nobody holds its lease.
+         * A manual refresh has no worker to retry it, so after a retryable failure its priority
+         * would otherwise sit on a PENDING workflow forever and turn every periodic and EPG sync
+         * into BUSY: the guide then expires once its last downloaded days run out.
+         */
+        const val PRIORITY_HOLD_MILLIS = 15 * 60_000L
     }
 }

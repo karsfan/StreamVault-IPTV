@@ -348,6 +348,46 @@ class ProviderWorkflowDaoTest {
             .containsExactly(ProviderWorkflowPhase.PREPARE)
     }
 
+    @Test
+    fun `failed higher priority request stops blocking periodic work once it lapses`() = runTest {
+        insertProvider()
+        val dao = database.providerWorkflowDao()
+        val manual = dao.request(
+            providerId = PROVIDER_ID,
+            phase = ProviderWorkflowPhase.PRIMARY_CATALOG,
+            reason = ProviderWorkflowReason.MANUAL,
+            now = 100L,
+            priority = 50
+        )
+        val manualLease = checkNotNull(
+            dao.claim(manual, "manual", 101L, 1_000L, staleHeartbeatBefore = 0L)
+        )
+        assertThat(
+            dao.fail(manualLease, now = 102L, errorCode = "NETWORK", errorMessage = null, retryable = true)
+        ).isTrue()
+
+        val tooSoon = dao.request(
+            PROVIDER_ID,
+            ProviderWorkflowPhase.EPG,
+            ProviderWorkflowReason.PERIODIC,
+            now = 103L,
+            priorityLapsedBefore = 50L
+        )
+        assertThat(tooSoon.admitted).isFalse()
+
+        val later = dao.request(
+            PROVIDER_ID,
+            ProviderWorkflowPhase.EPG,
+            ProviderWorkflowReason.PERIODIC,
+            now = 10_000L,
+            priorityLapsedBefore = 9_000L
+        )
+        assertThat(later.admitted).isTrue()
+        assertThat(dao.getWorkflow(PROVIDER_ID)!!.priority).isEqualTo(0)
+        assertThat(dao.claim(later, "periodic", 10_001L, 1_000L, staleHeartbeatBefore = 0L))
+            .isNotNull()
+    }
+
     private suspend fun insertProvider(providerId: Long = PROVIDER_ID) {
         database.providerDao().insert(
             ProviderEntity(
