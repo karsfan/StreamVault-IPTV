@@ -11,6 +11,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkRequest
 import androidx.work.WorkerParameters
@@ -578,11 +579,22 @@ class ProviderSyncWorker(
                 )
                 .build()
 
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                UNIQUE_LAUNCH_STALE_WORK_NAME,
-                ExistingWorkPolicy.KEEP,
-                request
-            )
+            // A check left pending from an earlier attempt can sit in exponential backoff for
+            // hours: on a TV the process wakes during standby with its network blocked by Doze,
+            // WorkManager's in-process scheduler still sees the Wi-Fi as validated, and every
+            // such run fails at once. Coming to the foreground is when the network really works,
+            // so a pending check is replaced; only a running one is kept.
+            val workManager = WorkManager.getInstance(context)
+            val existing = workManager.getWorkInfosForUniqueWork(UNIQUE_LAUNCH_STALE_WORK_NAME)
+            existing.addListener({
+                val running = runCatching { existing.get() }.getOrDefault(emptyList())
+                    .any { it.state == WorkInfo.State.RUNNING }
+                workManager.enqueueUniqueWork(
+                    UNIQUE_LAUNCH_STALE_WORK_NAME,
+                    if (running) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE,
+                    request
+                )
+            }, Runnable::run)
         }
 
         fun enqueueProvider(context: Context, providerId: Long) {
